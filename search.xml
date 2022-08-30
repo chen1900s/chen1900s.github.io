@@ -4,6 +4,35 @@
   
     
     <entry>
+      <title>Helm安装和使用</title>
+      <link href="/post/e3ad72ca.html"/>
+      <url>/post/e3ad72ca.html</url>
+      
+        <content type="html"><![CDATA[<h3 id="一-安装Helm客户端"><a href="#一-安装Helm客户端" class="headerlink" title="一  安装Helm客户端"></a>一  安装Helm客户端</h3><blockquote><p>本文是通过二进制方式安装，如需其他方式可以参考官网文档</p><p>helm官方文档： <a href="https://helm.sh/zh/docs/intro/install/">https://helm.sh/zh/docs/intro/install/</a></p></blockquote><p>每个Helm <a href="https://github.com/helm/helm/releases">版本</a>都提供了各种操作系统的二进制版本，不同的版本可以手动下载和安装。</p><ol><li>下载 <a href="https://github.com/helm/helm/releases">需要的版本</a></li><li>解压(<code>tar -zxvf helm-v3.0.0-linux-amd64.tar.gz</code>)</li><li>在解压目中找到<code>helm</code>程序，移动到需要的目录中(<code>mv linux-amd64/helm /usr/local/bin/helm</code>)</li></ol><h3 id="二-添加helm仓库"><a href="#二-添加helm仓库" class="headerlink" title="二  添加helm仓库"></a>二  添加helm仓库</h3><p>以腾讯云TCR镜像仓库为例</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">#命令示例<br>#helm repo add $instance-$namespace https://$instance.tencentcloudcr.com/chartrepo/$namespace --username $username --password $instance-token<br><br>#实际操作示例，根据自己的参考修改对应的信息<br>#其中用户和密码 可以在控制台创建<br>#helm repo add  tke-pass-helm   https://tke-pass.tencentcloudcr.com/chartrepo/helm --username xxxxxxxx   --password  xxxxxx<br></code></pre></td></tr></table></figure><ul><li><p><code>$instance-$namespace</code>：为 helm repo 名称，建议使用<strong>实例名称+命名空间名称</strong>组合的方式命名，以便于区分各个实例及命名空间。</p></li><li><p>https:&#x2F;&#x2F;$instance.tencentcloudcr.com&#x2F;chartrepo&#x2F;$namespace：为 helm repo 的远端地址。</p></li><li><p><code>$username</code>：已获取的用户名。</p></li><li><p><code>$instance-token</code>：已获取的登录密码。</p><p>如添加成功将提示以下信息。</p></li></ul><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">&quot;tcr-chen-helm&quot; has been added to your repositories<br></code></pre></td></tr></table></figure><p>使用该命令可以查看当前的helm 仓库信息</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext"># helm repo list<br>NAME                            URL                                                                                           <br>tcr-chen-helm                   https://tcr-chen.tencentcloudcr.com/chartrepo/helm<br></code></pre></td></tr></table></figure><h3 id="三-推送-Helm-Chart"><a href="#三-推送-Helm-Chart" class="headerlink" title="三 推送 Helm Chart"></a>三 推送 Helm Chart</h3><ol><li><p>安装 Helm Push 插件</p><blockquote><p>注意：请安装 0.9.0 及以上版本的 helm-push 插件，避免因版本不兼容等问题造成无法正常推送 helm chart。</p></blockquote><p>使用 Helm CLI 上传 Chart 包需要安装 helm-push 插件，该插件支持使用helm push 指令推送 helm chart 至指定 repo，同时支持上传目录及压缩包。</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">helm plugin install https://github.com/chartmuseum/helm-push<br></code></pre></td></tr></table></figure></li><li><p>在节点上执行以下命令，创建一个 Chart。</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">helm create  chart-demo<br></code></pre></td></tr></table></figure></li><li><p>执行以下命令，可直接推送指定目录至 Chart 仓库（可选）。</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">helm push  chart-demo $instance-$namespace<br>#温馨提示高级版本使用的是cm-push命令<br>#helm cm-push chart-demo $instance-$namespace<br></code></pre></td></tr></table></figure><p>其中   $instance-$namespace  为已添加的本地仓库名称。</p></li><li><p>执行以下命令，可压缩指定目录，并推送至 Chart 仓库。</p><figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">tar zcvf  chart-demo-1.0.0.tgz chart-demo/<br></code></pre></td></tr></table></figure><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">helm push  chart-demo-1.0.0.tgz $instance-$namespace<br></code></pre></td></tr></table></figure><p>其中$instance-$namespace为已添加的本地仓库名称。</p></li></ol><h3 id="四-拉取-Helm-Chart"><a href="#四-拉取-Helm-Chart" class="headerlink" title="四 拉取 Helm Chart"></a>四 拉取 Helm Chart</h3><ol><li><p>在节点上执行以下命令，获取最新的 Chart 信息。</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">helm repo update<br></code></pre></td></tr></table></figure></li><li><p>执行以下命令，拉取指定版本 Helm Chart。</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">helm fetch &lt;本地仓库名称&gt;/&lt;Chart 名称&gt; --version &lt;Chart 版本&gt;<br></code></pre></td></tr></table></figure><p>以从企业版实例 tcr-demo 中拉取命名空间 project-a 内 tcr-chart-demo 1.0.0 版本为例：</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">helm fetch tcr-chen-helm/chart-demo --version 1.0.0<br></code></pre></td></tr></table></figure></li></ol><h3 id="五-自建Harbor启用helmchart服务"><a href="#五-自建Harbor启用helmchart服务" class="headerlink" title="五 自建Harbor启用helmchart服务"></a>五 自建Harbor启用helmchart服务</h3><h4 id="1，安装-harbor-的-helmchart-repository"><a href="#1，安装-harbor-的-helmchart-repository" class="headerlink" title="1，安装 harbor 的 helmchart repository"></a><strong>1，安装 harbor 的 helmchart repository</strong></h4><p>默认新版 harbor 不会启用 chart repository service，如果需要自建的harbor管理 helm应用的话，需要在安装时添加额外的参数，例如：启用 chart repository service 服务的安装方式要添加一个参数 –with-chartmuseum</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">[root@VM-55-9-tlinux ~/docker-compose/harbor]# ./install.sh --with-chartmuseum<br></code></pre></td></tr></table></figure><p>安装完成后，会有这个提示 说明是安装成功：</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">⠿ Container chartmuseum              Started <br></code></pre></td></tr></table></figure><h4 id="2，发布-helm-charts"><a href="#2，发布-helm-charts" class="headerlink" title="2，发布 helm charts"></a>2，发布 helm charts</h4><p><strong>方式一、基于dashboard 的可视化上传</strong></p><p>用户使用浏览器登录 harbor镜像仓库后，在对应的管理界面操作即可，如下图：</p><p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/1652931750847.png" alt="1652931750847"></p><p><strong>方式二、基于命令行的 CLI 推送</strong></p><p>作为一个运维人员或者开发人员，更喜欢通过命令行方式推送和拉取helm，如下操作</p><p>1、安装插件</p><p>为了能使用命令推送，我们需要安装并使用 helm push 插件包，地址： <a href="https://github.com/chartmuseum/helm-push/releases">https://github.com/chartmuseum/helm-push/releases</a></p><p>a) 在线安装插件：</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">helm plugin install https://github.com/chartmuseum/helm-pus<br></code></pre></td></tr></table></figure><p>b) 离线安装插件：</p><p>下载安装包 helm-push_0.10.1_linux_amd64.tar.gz，再使用命令 helm env 获取 HELM_PLUGINS 路径，然后放置和解压安装包，最后使用 helm plugin list 查看结果，如下：</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">[root@VM-55-9-tlinux ~/harbor]# helm env | grep HELM_PLUGINS<br>HELM_PLUGINS=&quot;/root/.local/share/helm/plugins<br>[root@VM-55-9-tlinux ~/harbor]# mkdir -p /root/.local/share/helm/plugins/helm-push<br>[root@VM-55-9-tlinux ~/harbor]# mv helm-push_0.10.1_linux_amd64.tar.gz /root/.local/share/helm/plugins/helm-push/<br>[root@VM-55-9-tlinux ~/harbor]# cd /root/.local/share/helm/plugins/helm-push/<br>[root@VM-55-9-tlinux helm-push]# tar -xzvf helm-push_0.10.1_linux_amd64.tar.gz <br>[root@VM-55-9-tlinux helm-push]# helm plugin list<br>NAME    VERSION DESCRIPTION                    <br>cm-push 0.10.1  Push chart package to ChartMuseum<br><br></code></pre></td></tr></table></figure><p>2、添加 harbor 仓库到本地 helm 仓库列表</p><p>查看本地仓库列表(列出的是我已经添加其他仓库)</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">[root@VM-55-9-tlinux ~/helm]# helm repo list<br>NAME            URL                                             <br>tke-pass-helm   https://tke-pass.tencentcloudcr.com/chartrepo/helm<br><br># 添加仓库地址到本地列表(其中 myharbor-helm 为这个仓库地址在 helm 本地的名称，连接是仓库URL，后面是登录 harbor 的用户名和密码)<br># URL格式：http(s)://&#123;harbor域名或iP:端口(如果默认443或80可不加)&#125;/chartrepo/&#123;yourHarborProjectName&#125;<br><br>[root@VM-55-9-tlinux ~/helm]# helm repo add myharbor-helm http://101.35.6.116:88/chartrepo/charts --username admin  --password xxxxxx<br><br>#有如下提示表示添加成功<br>&quot;myharbor-helm&quot; has been added to your repositories<br><br># 再查看(发现已添加成功)<br>[root@VM-55-9-tlinux ~/helm]# helm repo list<br>NAME            URL                                             <br>tke-pass-helm   https://tke-pass.tencentcloudcr.com/chartrepo/helm<br>myharbor-helm   http://101.35.6.116:88/chartrepo/charts<br><br>##更新本地仓库缓存内容<br>[root@VM-55-9-tlinux ~/helm]# helm repo update<br>Hang tight while we grab the latest from your chart repositories...<br>...Successfully got an update from the &quot;myharbor-helm&quot; chart repository<br>...Successfully got an update from the &quot;tke-pass-helm&quot; chart repository<br>Update Complete. ⎈Happy Helming!⎈<br></code></pre></td></tr></table></figure><blockquote><p>温馨提示：</p><p>1，harbor 仓库 URL 中的 chartrepo 是固定值。</p><p>2，在操作之前，请务必先在 harbor 中创建好项目，例如 charts即为先创建好的项目名称。</p><p>3，如果你还是搞不清这个URL，可以在harbor界面中上传一个外面下着的 chart 包，上次成功后进入这个 chart 详细页面，在 “概要这个Tab” 的最底部区域，harbor会告诉你在本地添加仓库的URL和命令。</p></blockquote><p>3、推送 chart 以及 chart 的更多操作</p><p>推送 chart 示例</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext"># 推送chart文件夹方式<br>helm push mychartdemo myharbor-helm<br><br># 推送chart压缩包方式<br>helm push mychartdemo-1.0.1.tgz myharbor-helm<br></code></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> Kubernetes </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Helm </tag>
+            
+            <tag> Kubernetes </tag>
+            
+            <tag> Harbor </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>Kubernetes部署nacos服务</title>
       <link href="/post/7af4624e.html"/>
       <url>/post/7af4624e.html</url>
@@ -20,9 +49,9 @@
       
         <tags>
             
-            <tag> kubernetes </tag>
+            <tag> Kubernetes </tag>
             
-            <tag> nacos </tag>
+            <tag> Nacos </tag>
             
         </tags>
       
@@ -40,14 +69,14 @@
       
       <categories>
           
-          <category> hexo </category>
+          <category> Hexo </category>
           
       </categories>
       
       
         <tags>
             
-            <tag> hexo </tag>
+            <tag> Hexo </tag>
             
         </tags>
       
@@ -65,14 +94,14 @@
       
       <categories>
           
-          <category> hexo </category>
+          <category> Hexo </category>
           
       </categories>
       
       
         <tags>
             
-            <tag> hexo </tag>
+            <tag> Hexo </tag>
             
         </tags>
       
@@ -90,14 +119,14 @@
       
       <categories>
           
-          <category> hexo </category>
+          <category> Hexo </category>
           
       </categories>
       
       
         <tags>
             
-            <tag> hexo </tag>
+            <tag> Hexo </tag>
             
         </tags>
       
