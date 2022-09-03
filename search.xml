@@ -60,6 +60,58 @@
     
     
     <entry>
+      <title>Kubernetes中pod数据存储</title>
+      <link href="/post/76f3febd.html"/>
+      <url>/post/76f3febd.html</url>
+      
+        <content type="html"><![CDATA[<h2 id="POD如何使用节点磁盘"><a href="#POD如何使用节点磁盘" class="headerlink" title="POD如何使用节点磁盘"></a>POD如何使用节点磁盘</h2><p>K8S中，容器container在运行过程中，会产生一些日志，临时文件，如果没有任何限制的话，会写满POD所在节点磁盘空间，从而会影响对应节点 已经节点上其他POD应用，</p><p> 容器的<strong>临时存储，例如 emptyDir</strong>，位于目录&#x2F;var&#x2F;lib&#x2F;kubelet&#x2F;pods 下 </p><blockquote><p>通过如下命令可以查询到集群POD所对应的POD_ID</p><p>kubectl get pods -o custom-columns&#x3D;podName:.metadata.name,podIP:.status.podIP,podStatus:.status.phase,nodeIP:.status.hostIP,Pod_ID:.metadata.uid</p></blockquote><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">[root@VM-249-47-tlinux /var/lib/kubelet/pods]# kubectl get pods -o custom-columns=podName:.metadata.name,podIP:.status.podIP,podStatus:.status.phase,nodeIP:.status.hostIP,Pod_ID:.metadata.uid<br>podName                   podIP        podStatus   nodeIP          Pod_ID<br>centos-74cd685986-rcfqk   10.200.0.5   Running     172.30.249.47   9ad30306-f6cd-49eb-a279-cd58201be8c3<br><br>[root@VM-249-47-tlinux /var/lib/kubelet/pods]# <br>[root@VM-249-47-tlinux /var/lib/kubelet/pods]# tree  9ad30306-f6cd-49eb-a279-cd58201be8c3<br>9ad30306-f6cd-49eb-a279-cd58201be8c3   #pod的 uid<br>├── containers                         # pod 里面的container 容器<br>│   ├── busybox                        #容器1<br>│   │   └── 21efdec2<br>│   └── centos                         #容器2<br>│       └── 64bbf490<br>├── etc-hosts                          # 命名空间的Host文件<br>├── plugins<br>│   └── kubernetes.io~empty-dir<br>│       ├── wrapped_cm<br>│       │   └── ready<br>│       ├── wrapped_default-token-7llnd<br>│       │   └── ready<br>│       └── wrapped_secret<br>│           └── ready<br>└── volumes                                           # Pod的卷<br>    ├── kubernetes.io~configmap                       # ConfigMap类型的卷<br>    │   └── cm<br>    │       └── app -&gt; ..data/app<br>    ├── kubernetes.io~qcloud-cbs                      #CBS类型的数据卷<br>    │   └── pvc-137607ae-974d-4c25-90dc-efc3c2a6c5a8  #PV名称，对应POD里面挂载点<br>    │       └── lost+found<br>    └── kubernetes.io~secret                          #Secret类型的卷<br>        ├── default-token-7llnd<br>        │   ├── ca.crt -&gt; ..data/ca.crt<br>        │   ├── namespace -&gt; ..data/namespace<br>        │   └── token -&gt; ..data/token<br>        └── secret<br>            └── password -&gt; ..data/password<br><br>17 directories, 11 files<br></code></pre></td></tr></table></figure><p><strong>持久卷的挂载点</strong>也位于&#x2F;var&#x2F;lib&#x2F;kubelet&#x2F;pods 下，但是<strong>不会导致存储空间的消耗</strong>。</p><p>容器的日志，存放在&#x2F;var&#x2F;log&#x2F;pods 目录下</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">[root@VM-249-47-tlinux /var/log/pods]# ls -lrt  | grep centos<br>drwxr-xr-x 4 root root 4096 Aug  7 18:23 default_centos-74cd685986-rcfqk_9ad30306-f6cd-49eb-a279-cd58201be8c3<br></code></pre></td></tr></table></figure><p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209031845790.png" alt="1659868302215"></p><blockquote><p>目录命名方式是：命名空间_POD名称_POD-UID</p><p>9ad30306-f6cd-49eb-a279-cd58201be8c3 这个指的就是POD的uid</p></blockquote><p>日志是软链接到&#x2F;var&#x2F;lib&#x2F;docker&#x2F;containers&#x2F;容器ID&#x2F;容器ID-json.log</p><p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209031846679.png" alt="1659868600279"></p><p> 使用 Docker 时，<strong>容器的 rootfs</strong>位于&#x2F;var&#x2F;lib&#x2F;docker 下，具体位置取决于存储驱动。 </p><h2 id="pod驱逐机制"><a href="#pod驱逐机制" class="headerlink" title="pod驱逐机制"></a>pod驱逐机制</h2><blockquote><p>K8S官方驱逐机制可以参考文档：<a href="https://kubernetes.io/zh-cn/docs/concepts/scheduling-eviction/node-pressure-eviction/">https://kubernetes.io/zh-cn/docs/concepts/scheduling-eviction/node-pressure-eviction/</a></p></blockquote><h3 id="磁盘容量不足触发的驱逐"><a href="#磁盘容量不足触发的驱逐" class="headerlink" title="磁盘容量不足触发的驱逐"></a>磁盘容量不足触发的驱逐</h3><p>​      当不可压缩资源（内存、磁盘）不足时，节点上的 Kubelet 会尝试驱逐掉某些 Pod，以释放资源，防止整个系统受到影响。</p><p>其中，磁盘资源不足的信号来源有两个：</p><ol><li>imagefs：容器运行时用作存储镜像、可写层的文件系统</li><li>nodefs：Kubelet 用作卷、守护进程日志的文件系统</li></ol><p>当 imagefs 用量到达驱逐阈值，Kubelet 会删除所有未使用的镜像，释放空间。</p><p>当 nodefs 用量到达阈值，Kubelet 会选择性的驱逐 Pod（及其容器）来释放空间。</p><h3 id="本地临时存储触发的驱逐"><a href="#本地临时存储触发的驱逐" class="headerlink" title="本地临时存储触发的驱逐"></a>本地临时存储触发的驱逐</h3><p>K8S 支持设置每个 Pod 可以使用的临时存储的 request&#x2F;limit，驱逐行为可以更具有针对性。如果 Pod 使用了超过限制的本地临时存储，Kubelet 将设置驱逐信号，触发 Pod 驱逐流程：</p><ol><li>对于容器级别的隔离，如果一个容器的可写层、日志占用磁盘超过限制，则 Kubelet 标记 Pod 为待驱逐</li><li>对于 Pod 级别的隔离，Pod 总用量限制，是每个容器限制之和。如果各容器用量之和+Pod 的 emptyDir 卷超过 Pod 总用量限制，标记 Pod 为待驱逐</li></ol><h3 id="从编排层限制"><a href="#从编排层限制" class="headerlink" title="从编排层限制"></a>从编排层限制</h3><p>从 K8S 1.8 开始，支持本地临时存储（local ephemeral storage），ephemeral 的意思是，数据的持久性（durability）不做保证。临时存储可能 Backed by 本地 Attach 的可写设备，或者内存。</p><p>Pod 可以使用本地临时存储来作为暂存空间，或者存放缓存、日志。Kubelet 可以利用本地临时存储，将 emptyDir 卷挂载给容器。Kubelet 也使用<strong>本地临时存储来保存节点级别的容器日志、容器镜像、容器的可写层</strong>。</p><p>Kubelet 会将日志写入到你配置好的日志目录，默认 <code>/var/log</code>。其它文件默认都写入到 <code>/var/lib/kubelet</code>。在典型情况下，这两个目录可能都位于宿主机的 rootfs 之下。</p><p>Kubernetes 支持跟踪、保留&#x2F;限制 Pod 能够使用的本地临时存储的总量。</p><h4 id="限制-Pod-用量"><a href="#限制-Pod-用量" class="headerlink" title="限制 Pod 用量"></a>限制 Pod 用量</h4><p>打开特性开关：<code>LocalStorageCapacityIsolation</code>，可以限制每个 Pod 能够使用的临时存储的总量。</p><p>注意：以内存为媒介（tmpfs）的 emptyDir，其用量计入容器内存消耗，而非本地临时存储消耗。</p><p>使用类似限制内存、CPU 用量的方式，限制本地临时存储用量：</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">spec.containers[].resources.limits.ephemeral-storage<br>spec.containers[].resources.requests.ephemeral-storage<br></code></pre></td></tr></table></figure><p> 单位可以是 E, P, T, G, M, K，或者 Ei, Pi, Ti, Gi, Mi, Ki（1024）。 </p><p> 示例   容器最多使用 4GiB 的本地临时存储 </p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">apiVersion: apps/v1<br>kind: Deployment<br>metadata:<br>  labels:<br>    k8s-app: centos-dubug<br>    qcloud-app: centos-dubug<br>  name: centos-dubug<br>  namespace: default<br>spec:<br>  replicas: 1<br>  selector:<br>    matchLabels:<br>      k8s-app: centos-dubug<br>      qcloud-app: centos-dubug<br>  template:<br>    metadata:<br>      labels:<br>        k8s-app: centos-dubug<br>        qcloud-app: centos-dubug<br>    spec:<br>      containers:<br>      - args:<br>        - -c<br>        - sleep  36000<br>        command:<br>        - /bin/sh<br>        image: ccr.ccs.tencentyun.com/v_cjweichen/centos:latest<br>        imagePullPolicy: Always<br>        name: centos<br>        resources:<br>          limits:<br>            cpu: 200m<br>            ephemeral-storage: 4Gi<br>            memory: 256Mi<br>          requests:<br>            cpu: 100m<br>            ephemeral-storage: 4Gi<br>            memory: 64Mi<br>        securityContext:<br>          privileged: false<br></code></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> Kubernetes </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Kubernetes </tag>
+            
+            <tag> docker </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>Linux安装NodeJS</title>
+      <link href="/post/fe4ed47c.html"/>
+      <url>/post/fe4ed47c.html</url>
+      
+        <content type="html"><![CDATA[<h2 id="Linux安装NodeJS"><a href="#Linux安装NodeJS" class="headerlink" title="Linux安装NodeJS"></a>Linux安装NodeJS</h2><blockquote><p>Node.js  是一个基于Chrome V8 引擎 JavaScript 运行时环境， <a href="https://nodejs.org/zh-cn/download/">nodejs 官网</a></p></blockquote><h3 id="下载安装包"><a href="#下载安装包" class="headerlink" title="下载安装包"></a>下载安装包</h3><p><strong>1，可以在官网控制台下载上传至服务器</strong></p><p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209031802065.png" alt="image-20220409115051104"></p><p><strong>2，或者使用命令直接下载</strong></p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">[root@xxx ~/nodejs]# wget https://nodejs.org/dist/v16.14.2/node-v16.14.2-linux-x64.tar.xz   // 下载<br>[root@xxx ~/nodejs]# tar xf  node-v16.14.2-linux-x64.tar.xz        // 解压<br>[root@xxx ~/nodejs]# cd nnode-v16.14.2-linux-x64/                  // 进入解压目录<br></code></pre></td></tr></table></figure><blockquote><p> <a href="https://nodejs.org/dist/">历史版本下载</a>  </p></blockquote><h3 id="使用RZ上传到服务器并解压"><a href="#使用RZ上传到服务器并解压" class="headerlink" title="使用RZ上传到服务器并解压"></a>使用RZ上传到服务器并解压</h3><blockquote><p>Linux的sz和rz命令，可使用yum命令安装：yum install -y lrzsz</p></blockquote><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">[root@xxx ~/nodejs]# pwd<br>/root/nodejs<br>[root@xxx ~/nodejs]# ls -lrt<br>total 21428<br>-rw-rw-rw- 1 root root 21941244 Apr  9 11:52 node-v16.14.2-linux-x64.tar.xz<br>[root@xxx ~/nodejs]# tar -xvf node-v16.14.2-linux-x64.tar.xz <br>[root@xxx ~/nodejs]# cd /usr/local/<br>[root@xxx /usr/local]# ls<br>bin  etc  games  include  lib  lib64  libexec  lost+found  qcloud  sa  sbin  share  src<br>[root@xxx /usr/local]# mv /root/nodejs/node-v16.14.2-linux-x64 .<br>[root@xxx /usr/local]# mv node-v16.14.2-linux-x64/ nodejs <br></code></pre></td></tr></table></figure><h3 id="配置环境变量"><a href="#配置环境变量" class="headerlink" title="配置环境变量"></a>配置环境变量</h3><p><strong>方式一：环境变量</strong></p><p>　1）、加入环境变量，在 &#x2F;etc&#x2F;profile 文件末尾增加配置</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">vi /etc/profile<br>export PATH=$PATH:/usr/local/nodejs/bin<br></code></pre></td></tr></table></figure><p>　2）、执行命令使配置文件生效</p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">source /etc/profile<br></code></pre></td></tr></table></figure><p><strong>方式二：软链接方式</strong></p><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">ln -s /usr/local/nodejs/bin/npm /usr/local/bin/<br>ln -s /usr/local/nodejs/bin/node /usr/local/bin/<br></code></pre></td></tr></table></figure><h3 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">[root@xxx /usr/local]# node -v<br>v16.14.2<br>[root@xxx /usr/local]# npm -v<br>8.5.0<br></code></pre></td></tr></table></figure><h3 id="Npm-更换淘宝镜像"><a href="#Npm-更换淘宝镜像" class="headerlink" title="Npm 更换淘宝镜像"></a>Npm 更换淘宝镜像</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">npm config set registry https://registry.npm.taobao.org<br>npm install<br></code></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> Linux </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> NodeJS </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>Front-matter基本使用</title>
       <link href="/post/265fa930.html"/>
       <url>/post/265fa930.html</url>
