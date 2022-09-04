@@ -20,9 +20,9 @@
       
         <tags>
             
-            <tag> Kubernetes </tag>
-            
             <tag> Helm </tag>
+            
+            <tag> Kubernetes </tag>
             
             <tag> Harbor </tag>
             
