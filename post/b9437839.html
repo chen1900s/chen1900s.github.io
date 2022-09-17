@@ -1,0 +1,357 @@
+<!DOCTYPE html><html class="hide-aside" lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>Kube-state-metrics部署安装 | JingWei Chen</title><meta name="keywords" content="Kubernetes,Prometheus,Kube-state-metrics"><meta name="author" content="JingWei Chen"><meta name="copyright" content="JingWei Chen"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="在kubernetes集群中部署Kube-state-metrics">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kube-state-metrics部署安装">
+<meta property="og:url" content="https://blog.chen1900s.cn/post/b9437839.html">
+<meta property="og:site_name" content="JingWei Chen">
+<meta property="og:description" content="在kubernetes集群中部署Kube-state-metrics">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172031080.jpeg">
+<meta property="article:published_time" content="2022-09-17T12:29:11.000Z">
+<meta property="article:modified_time" content="2020-06-06T15:58:58.000Z">
+<meta property="article:author" content="JingWei Chen">
+<meta property="article:tag" content="Kubernetes">
+<meta property="article:tag" content="Prometheus">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172031080.jpeg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://blog.chen1900s.cn/post/b9437839"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: {"defaultEncoding":1,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"简"},
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":false,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"limitCount":50,"languages":{"author":"作者: JingWei Chen","link":"链接: ","source":"来源: JingWei Chen","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。"}},
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"bottom-left"},
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Kube-state-metrics部署安装',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2020-06-06 23:58:58'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/self/duotone.css"><link rel="stylesheet" href="/css/iconfont.css"><link rel="stylesheet" href="/css/mycss.css"><link rel="stylesheet" href="/css/background.css"><meta name="generator" content="Hexo 6.2.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/avatar.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">14</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/messageboard/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page group hide" href="javascript:void(0);"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/game/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li><li><a class="site-page child" href="/photos/"><i class="fa-fw fa fa-camera-retro"></i><span> 相册</span></a></li><li><a class="site-page child" href="/book/"><i class="fa-fw fa fa-book"></i><span> 电子书</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于我</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209031854794.jpg')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">JingWei Chen</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/messageboard/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page group hide" href="javascript:void(0);"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/game/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li><li><a class="site-page child" href="/photos/"><i class="fa-fw fa fa-camera-retro"></i><span> 相册</span></a></li><li><a class="site-page child" href="/book/"><i class="fa-fw fa fa-book"></i><span> 电子书</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于我</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">Kube-state-metrics部署安装</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-09-17T12:29:11.000Z" title="发表于 2022-09-17 20:29:11">2022-09-17</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2020-06-06T15:58:58.000Z" title="更新于 2020-06-06 23:58:58">2020-06-06</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Kubernetes/">Kubernetes</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="Kube-state-metrics部署安装"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>在kubernetes集群中已经有了 cadvisor、heapster、metric-server，基本上容器运行的所有指标都能拿到，但是针对下面这种情况获取不到：</p>
+<ul>
+<li>比如调度了多少个 replicasset ，现在可用的有几个？</li>
+<li>多少个 Pod 是 running&#x2F;stopped&#x2F;terminated 状态？</li>
+<li>Pod 重启了多少次？</li>
+<li>有多少 job 在运行中</li>
+</ul>
+<p>而这些指标采集则需要 kube-state-metrics 进行采集，它基于 client-go 开发，负责监听 K8s apiserver 从而生成metrics数据，指标数据通过 <code>/metrics</code> Endpoint 暴露，主要是适配 Prometheus</p>
+<h2 id="部署安装"><a href="#部署安装" class="headerlink" title="部署安装"></a>部署安装</h2><p><strong>1，下载将 <a target="_blank" rel="noopener" href="https://github.com/kubernetes/kube-state-metrics/blob/master/examples/standard">kube-state-metrics examples</a> 几个文件，分别为</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash">kube-state-metrics/    <br>├── cluster-role-binding.yaml  <br>├── cluster-role-binding.yaml   <br>├── deployment.yaml    <br>├── service-account.yaml   <br>├── service.yaml    <br></code></pre></td></tr></table></figure>
+
+<p><strong>2，修改镜像地址</strong>（默认镜像地址k8s.gcr.io 在国外。可以找个海外机器拉取下来上传到国内镜像仓库进行拉取上传到自己的镜像仓库里面）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash">- image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.6.0<br><br><span class="hljs-comment">#本人已经拉取到自己镜像仓库 可以修改成</span><br>- image: ccr.ccs.tencentyun.com/chenjingwei/kube-state-metrics:v2.6.0<br></code></pre></td></tr></table></figure>
+
+<p><strong>3，安装kube-state-metrics</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash">kubectl apply -f ./<br></code></pre></td></tr></table></figure>
+
+<p><strong>4，查看是否安装成功</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># kubectl get pods -n kube-system -o wide | grep kube-state-metrics</span><br>kube-state-metrics-57768576b6-mh5d8   1/1     Running   0   2m19s   172.16.0.12      172.30.249.130   &lt;none&gt;      &lt;none&gt;<br><br><span class="hljs-comment">#通过 /healthz 健康检查端口查看Pod状态。</span><br><span class="hljs-comment"># curl  172.16.0.12:8080/healthz</span><br>OK<br><br><br><span class="hljs-comment">#通过 /metrics 接口可查看其采集的全量数据</span><br><span class="hljs-comment"># curl 172.16.0.12:8080/metrics</span><br><br><span class="hljs-comment">#登陆启动POD里面访问测试</span><br>[root@centos-777bdddd57-zv7bv /]<span class="hljs-comment"># curl kube-state-metrics.kube-system.svc.cluster.local:8080</span><br>&lt;html&gt;<br>             &lt;<span class="hljs-built_in">head</span>&gt;&lt;title&gt;Kube Metrics Server&lt;/title&gt;&lt;/head&gt;<br>             &lt;body&gt;<br>             &lt;h1&gt;Kube Metrics&lt;/h1&gt;<br>                         &lt;ul&gt;<br>             &lt;li&gt;&lt;a href=<span class="hljs-string">&#x27;/metrics&#x27;</span>&gt;metrics&lt;/a&gt;&lt;/li&gt;<br>             &lt;li&gt;&lt;a href=<span class="hljs-string">&#x27;/healthz&#x27;</span>&gt;healthz&lt;/a&gt;&lt;/li&gt;<br>                         &lt;/ul&gt;<br>             &lt;/body&gt;<br>&lt;/html&gt;<br><span class="hljs-comment">#表示安装成功</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>启动时候有可能端口冲突 可以按照如下文档 添加启动参数，<a target="_blank" rel="noopener" href="https://github.com/bitnami/bitnami-docker-kube-state-metrics/blob/2.1.0-debian-10-r15/2/debian-10/Dockerfile">参考文档</a></p>
+</blockquote>
+<h2 id="与prometheus集成"><a href="#与prometheus集成" class="headerlink" title="与prometheus集成"></a>与prometheus集成</h2><p>修改prometheus配置文件，添加job_name</p>
+<blockquote>
+<p>kube-state-metrics是部署在kube-system命名空间下的，因此在正则匹配上，命名空间为kube-system，svc名称为kube-state-metrics，否则就不进行监控，k8s kube-state-metrics监控任务</p>
+</blockquote>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><code class="hljs yaml">  <span class="hljs-attr">job_name:</span> <span class="hljs-string">&quot;kube-state-metrics&quot;</span><br>  <span class="hljs-attr">kubernetes_sd_configs:</span><br>   <span class="hljs-bullet">-</span> <span class="hljs-attr">role:</span> <span class="hljs-string">endpoints</span><br>  <span class="hljs-attr">relabel_configs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-attr">source_labels:</span> [<span class="hljs-string">__meta_kubernetes_namespace</span>, <span class="hljs-string">__meta_kubernetes_endpoints_name</span>]<br>    <span class="hljs-attr">regex:</span> <span class="hljs-string">kube-system;kube-state-metrics</span><br>    <span class="hljs-attr">action:</span> <span class="hljs-string">keep</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">bearer_token_file:</span> <span class="hljs-string">/var/run/secrets/kubernetes.io/serviceaccount/token</span><br></code></pre></td></tr></table></figure>
+
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172207163.png" alt="image-20220917220729053"></p>
+<p><strong>6，查看prometheus的targets</strong></p>
+<p>部署成功后，prometheus的target会出现如下标志</p>
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172153353.png" alt="image-20220917215311281"></p>
+<p>可以看到kube-state-metrics监控任务下已经有两个Targets实例了。我们可以到grup界面通过PromQL语句查询相关监控数据。</p>
+<p>示例： 查看当前K8s集群有多少configmap资源对象</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">count(kube_configmap_created)<br></code></pre></td></tr></table></figure>
+
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172156719.png" alt="image-20220917215648632"></p>
+<p>使用 kube-state-metrics 后的常用场景有：</p>
+<ul>
+<li><p>存在执行失败的 Job</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><code class="hljs yaml"><span class="hljs-string">kube_job_status_failed&#123;job=&quot;kubernetes-service-endpoints&quot;,k8s_app=&quot;kube-state-metrics&quot;&#125;==1</span><br></code></pre></td></tr></table></figure>
+</li>
+<li><p>集群节点状态错误</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><code class="hljs yaml"><span class="hljs-string">kube_node_status_condition&#123;condition=&quot;Ready&quot;,status!=&quot;true&quot;&#125;==1</span><br></code></pre></td></tr></table></figure>
+</li>
+<li><p>集群中存在启动失败的 Pod</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><code class="hljs yaml"><span class="hljs-string">kube_pod_status_phase&#123;phase=~&quot;Failed|Unknown|Pending&quot;&#125;==1</span><br></code></pre></td></tr></table></figure>
+
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172218318.png" alt="image-20220917221857125"></p>
+</li>
+<li><p>最近30分钟内有 Pod 容器重启</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><code class="hljs yaml"><span class="hljs-string">changes(kube_pod_container_status_restarts[30m])&gt;0</span><br></code></pre></td></tr></table></figure>
+</li>
+<li><p>查看当前集群有多少个Pod正在运行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">count (kube_pod_container_state_started)<br></code></pre></td></tr></table></figure>
+
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172202253.png" alt="image-20220917220259158"></p>
+</li>
+</ul>
+<p>配合报警alertmanager可以更好地监控集群的运行</p>
+<h2 id="与metric-server的对比"><a href="#与metric-server的对比" class="headerlink" title="与metric-server的对比"></a>与metric-server的对比</h2><ul>
+<li>metric-server（或heapster）是从 api-server 中获取 cpu、内存使用率这种监控指标，并把他们发送给存储后端，如 influxdb 或云厂商，他当前的核心作用是：为 HPA 等组件提供决策指标支持。</li>
+<li>kube-state-metrics 关注于获取 k8s 各种资源的最新状态，如 deployment 或者 daemonset，之所以没有把kube-state-metrics 纳入到 metric-server 的能力中，是因为他们的关注点本质上是不一样的。metric-server仅仅是获取、格式化现有数据，写入特定的存储，实质上是一个监控系统。而 kube-state-metrics 是将 k8s 的运行状况在内存中做了个快照，并且获取新的指标，但他没有能力导出这些指标</li>
+<li>换个角度讲，kube-state-metrics 本身是 metric-server 的一种数据来源，虽然现在没有这么做。</li>
+<li>另外，像 Prometheus 这种监控系统，并不会去用 metric-server 中的数据，他都是自己做指标收集、集成的（Prometheus包含了metric-server的能力），但 Prometheus 可以监控 metric-server 本身组件的监控状态并适时报警，这里的监控就可以通过 kube-state-metrics 来实现，如 metric-server pod 的运行状态。</li>
+</ul>
+<h2 id="优化点和问题"><a href="#优化点和问题" class="headerlink" title="优化点和问题"></a>优化点和问题</h2><ul>
+<li>因为 kube-state-metrics 是监听资源的 add、delete、update 事件，那么在 kube-state-metrics 部署之前已经运行的资源，岂不是拿不到数据？kube-state-metric 利用 client-go 可以初始化所有已经存在的资源对象，确保没有任何遗漏</li>
+<li>kube-state-metrics 当前不会输出 metadata 信息(如 help 和 description）</li>
+<li>缓存实现是基于 golang 的 map，解决并发读问题当期是用了一个简单的互斥锁，可以解决问题，后续会考虑golang 的 sync.Map 安全 map。</li>
+<li>kube-state-metrics 通过比较 resource version 来保证 event 的顺序</li>
+<li>kube-state-metrics 并不保证包含所有资源</li>
+</ul>
+<h2 id="相关yaml文件"><a href="#相关yaml文件" class="headerlink" title="相关yaml文件"></a>相关yaml文件</h2><p>附上部署的yaml：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">v1</span><br><span class="hljs-attr">automountServiceAccountToken:</span> <span class="hljs-literal">false</span><br><span class="hljs-attr">kind:</span> <span class="hljs-string">ServiceAccount</span><br><span class="hljs-attr">metadata:</span><br>  <span class="hljs-attr">labels:</span><br>    <span class="hljs-attr">app.kubernetes.io/component:</span> <span class="hljs-string">exporter</span><br>    <span class="hljs-attr">app.kubernetes.io/name:</span> <span class="hljs-string">kube-state-metrics</span><br>    <span class="hljs-attr">app.kubernetes.io/version:</span> <span class="hljs-number">2.6</span><span class="hljs-number">.0</span><br>  <span class="hljs-attr">name:</span> <span class="hljs-string">kube-state-metrics</span><br>  <span class="hljs-attr">namespace:</span> <span class="hljs-string">kube-system</span><br><br><span class="hljs-meta">---</span><br><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">rbac.authorization.k8s.io/v1</span><br><span class="hljs-attr">kind:</span> <span class="hljs-string">ClusterRole</span><br><span class="hljs-attr">metadata:</span><br>  <span class="hljs-attr">labels:</span><br>    <span class="hljs-attr">app.kubernetes.io/component:</span> <span class="hljs-string">exporter</span><br>    <span class="hljs-attr">app.kubernetes.io/name:</span> <span class="hljs-string">kube-state-metrics</span><br>    <span class="hljs-attr">app.kubernetes.io/version:</span> <span class="hljs-number">2.6</span><span class="hljs-number">.0</span><br>  <span class="hljs-attr">name:</span> <span class="hljs-string">kube-state-metrics</span><br><span class="hljs-attr">rules:</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">apiGroups:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">&quot;&quot;</span><br>  <span class="hljs-attr">resources:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">configmaps</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">secrets</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">nodes</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">pods</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">services</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">serviceaccounts</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">resourcequotas</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">replicationcontrollers</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">limitranges</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">persistentvolumeclaims</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">persistentvolumes</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">namespaces</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">endpoints</span><br>  <span class="hljs-attr">verbs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">list</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">watch</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">apiGroups:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">apps</span><br>  <span class="hljs-attr">resources:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">statefulsets</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">daemonsets</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">deployments</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">replicasets</span><br>  <span class="hljs-attr">verbs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">list</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">watch</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">apiGroups:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">batch</span><br>  <span class="hljs-attr">resources:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">cronjobs</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">jobs</span><br>  <span class="hljs-attr">verbs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">list</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">watch</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">apiGroups:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">autoscaling</span><br>  <span class="hljs-attr">resources:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">horizontalpodautoscalers</span><br>  <span class="hljs-attr">verbs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">list</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">watch</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">apiGroups:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">authentication.k8s.io</span><br>  <span class="hljs-attr">resources:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">tokenreviews</span><br>  <span class="hljs-attr">verbs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">create</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">apiGroups:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">authorization.k8s.io</span><br>  <span class="hljs-attr">resources:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">subjectaccessreviews</span><br>  <span class="hljs-attr">verbs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">create</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">apiGroups:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">policy</span><br>  <span class="hljs-attr">resources:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">poddisruptionbudgets</span><br>  <span class="hljs-attr">verbs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">list</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">watch</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">apiGroups:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">certificates.k8s.io</span><br>  <span class="hljs-attr">resources:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">certificatesigningrequests</span><br>  <span class="hljs-attr">verbs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">list</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">watch</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">apiGroups:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">storage.k8s.io</span><br>  <span class="hljs-attr">resources:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">storageclasses</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">volumeattachments</span><br>  <span class="hljs-attr">verbs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">list</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">watch</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">apiGroups:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">admissionregistration.k8s.io</span><br>  <span class="hljs-attr">resources:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">mutatingwebhookconfigurations</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">validatingwebhookconfigurations</span><br>  <span class="hljs-attr">verbs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">list</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">watch</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">apiGroups:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">networking.k8s.io</span><br>  <span class="hljs-attr">resources:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">networkpolicies</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">ingresses</span><br>  <span class="hljs-attr">verbs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">list</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">watch</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">apiGroups:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">coordination.k8s.io</span><br>  <span class="hljs-attr">resources:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">leases</span><br>  <span class="hljs-attr">verbs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">list</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">watch</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">apiGroups:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">rbac.authorization.k8s.io</span><br>  <span class="hljs-attr">resources:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">clusterrolebindings</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">clusterroles</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">rolebindings</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">roles</span><br>  <span class="hljs-attr">verbs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">list</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">watch</span><br>  <br><span class="hljs-meta">---</span><br><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">rbac.authorization.k8s.io/v1</span><br><span class="hljs-attr">kind:</span> <span class="hljs-string">ClusterRoleBinding</span><br><span class="hljs-attr">metadata:</span><br>  <span class="hljs-attr">labels:</span><br>    <span class="hljs-attr">app.kubernetes.io/component:</span> <span class="hljs-string">exporter</span><br>    <span class="hljs-attr">app.kubernetes.io/name:</span> <span class="hljs-string">kube-state-metrics</span><br>    <span class="hljs-attr">app.kubernetes.io/version:</span> <span class="hljs-number">2.6</span><span class="hljs-number">.0</span><br>  <span class="hljs-attr">name:</span> <span class="hljs-string">kube-state-metrics</span><br><span class="hljs-attr">roleRef:</span><br>  <span class="hljs-attr">apiGroup:</span> <span class="hljs-string">rbac.authorization.k8s.io</span><br>  <span class="hljs-attr">kind:</span> <span class="hljs-string">ClusterRole</span><br>  <span class="hljs-attr">name:</span> <span class="hljs-string">kube-state-metrics</span><br><span class="hljs-attr">subjects:</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">kind:</span> <span class="hljs-string">ServiceAccount</span><br>  <span class="hljs-attr">name:</span> <span class="hljs-string">kube-state-metrics</span><br>  <span class="hljs-attr">namespace:</span> <span class="hljs-string">kube-system</span><br> <br><span class="hljs-meta">---</span><br><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">apps/v1</span><br><span class="hljs-attr">kind:</span> <span class="hljs-string">Deployment</span><br><span class="hljs-attr">metadata:</span><br>  <span class="hljs-attr">labels:</span><br>    <span class="hljs-attr">app.kubernetes.io/component:</span> <span class="hljs-string">exporter</span><br>    <span class="hljs-attr">app.kubernetes.io/name:</span> <span class="hljs-string">kube-state-metrics</span><br>    <span class="hljs-attr">app.kubernetes.io/version:</span> <span class="hljs-number">2.6</span><span class="hljs-number">.0</span><br>  <span class="hljs-attr">name:</span> <span class="hljs-string">kube-state-metrics</span><br>  <span class="hljs-attr">namespace:</span> <span class="hljs-string">kube-system</span><br><span class="hljs-attr">spec:</span><br>  <span class="hljs-attr">replicas:</span> <span class="hljs-number">1</span><br>  <span class="hljs-attr">selector:</span><br>    <span class="hljs-attr">matchLabels:</span><br>      <span class="hljs-attr">app.kubernetes.io/name:</span> <span class="hljs-string">kube-state-metrics</span><br>  <span class="hljs-attr">template:</span><br>    <span class="hljs-attr">metadata:</span><br>      <span class="hljs-attr">labels:</span><br>        <span class="hljs-attr">app.kubernetes.io/component:</span> <span class="hljs-string">exporter</span><br>        <span class="hljs-attr">app.kubernetes.io/name:</span> <span class="hljs-string">kube-state-metrics</span><br>        <span class="hljs-attr">app.kubernetes.io/version:</span> <span class="hljs-number">2.6</span><span class="hljs-number">.0</span><br>    <span class="hljs-attr">spec:</span><br>      <span class="hljs-attr">automountServiceAccountToken:</span> <span class="hljs-literal">true</span><br>      <span class="hljs-attr">containers:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">image:</span> <span class="hljs-string">ccr.ccs.tencentyun.com/chenjingwei/kube-state-metrics:v2.6.0</span><br>        <span class="hljs-attr">livenessProbe:</span><br>          <span class="hljs-attr">httpGet:</span><br>            <span class="hljs-attr">path:</span> <span class="hljs-string">/healthz</span><br>            <span class="hljs-attr">port:</span> <span class="hljs-number">8080</span><br>          <span class="hljs-attr">initialDelaySeconds:</span> <span class="hljs-number">5</span><br>          <span class="hljs-attr">timeoutSeconds:</span> <span class="hljs-number">5</span><br>        <span class="hljs-attr">name:</span> <span class="hljs-string">kube-state-metrics</span><br>        <span class="hljs-attr">ports:</span><br>        <span class="hljs-bullet">-</span> <span class="hljs-attr">containerPort:</span> <span class="hljs-number">8080</span><br>          <span class="hljs-attr">name:</span> <span class="hljs-string">http-metrics</span><br>        <span class="hljs-bullet">-</span> <span class="hljs-attr">containerPort:</span> <span class="hljs-number">8081</span><br>          <span class="hljs-attr">name:</span> <span class="hljs-string">telemetry</span><br>        <span class="hljs-attr">readinessProbe:</span><br>          <span class="hljs-attr">httpGet:</span><br>            <span class="hljs-attr">path:</span> <span class="hljs-string">/</span><br>            <span class="hljs-attr">port:</span> <span class="hljs-number">8081</span><br>          <span class="hljs-attr">initialDelaySeconds:</span> <span class="hljs-number">5</span><br>          <span class="hljs-attr">timeoutSeconds:</span> <span class="hljs-number">5</span><br>        <span class="hljs-attr">securityContext:</span><br>          <span class="hljs-attr">allowPrivilegeEscalation:</span> <span class="hljs-literal">false</span><br>          <span class="hljs-attr">capabilities:</span><br>            <span class="hljs-attr">drop:</span><br>            <span class="hljs-bullet">-</span> <span class="hljs-string">ALL</span><br>          <span class="hljs-attr">readOnlyRootFilesystem:</span> <span class="hljs-literal">true</span><br>          <span class="hljs-attr">runAsUser:</span> <span class="hljs-number">65534</span><br>      <span class="hljs-attr">nodeSelector:</span><br>        <span class="hljs-attr">kubernetes.io/os:</span> <span class="hljs-string">linux</span><br>      <span class="hljs-attr">serviceAccountName:</span> <span class="hljs-string">kube-state-metrics</span><br>      <br><span class="hljs-meta">---</span><br><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">v1</span><br><span class="hljs-attr">kind:</span> <span class="hljs-string">Service</span><br><span class="hljs-attr">metadata:</span><br>  <span class="hljs-attr">labels:</span><br>    <span class="hljs-attr">app.kubernetes.io/component:</span> <span class="hljs-string">exporter</span><br>    <span class="hljs-attr">app.kubernetes.io/name:</span> <span class="hljs-string">kube-state-metrics</span><br>    <span class="hljs-attr">app.kubernetes.io/version:</span> <span class="hljs-number">2.6</span><span class="hljs-number">.0</span><br>  <span class="hljs-attr">name:</span> <span class="hljs-string">kube-state-metrics</span><br>  <span class="hljs-attr">namespace:</span> <span class="hljs-string">kube-system</span><br><span class="hljs-attr">spec:</span><br>  <span class="hljs-attr">clusterIP:</span> <span class="hljs-string">None</span><br>  <span class="hljs-attr">ports:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">http-metrics</span><br>    <span class="hljs-attr">port:</span> <span class="hljs-number">8080</span><br>    <span class="hljs-attr">targetPort:</span> <span class="hljs-string">http-metrics</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">telemetry</span><br>    <span class="hljs-attr">port:</span> <span class="hljs-number">8081</span><br>    <span class="hljs-attr">targetPort:</span> <span class="hljs-string">telemetry</span><br>  <span class="hljs-attr">selector:</span><br>    <span class="hljs-attr">app.kubernetes.io/name:</span> <span class="hljs-string">kube-state-metrics</span><br></code></pre></td></tr></table></figure>
+
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://blog.chen1900s.cn">JingWei Chen</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://blog.chen1900s.cn/post/b9437839.html">https://blog.chen1900s.cn/post/b9437839.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://blog.chen1900s.cn" target="_blank">JingWei Chen</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Kubernetes/">Kubernetes</a><a class="post-meta__tags" href="/tags/Prometheus/">Prometheus</a></div><div class="post_share"><div class="social-share" data-image="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172031080.jpeg" data-sites="wechat,qq,weibo"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.png" target="_blank"><img class="post-qr-code-img" src="/img/wechat.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.png" target="_blank"><img class="post-qr-code-img" src="/img/alipay.png" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/post/1ed7eb83.html"><img class="prev-cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209180021460.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">missing-container-metrics部署安装和使用</div></div></a></div><div class="next-post pull-right"><a href="/post/94ad787b.html"><img class="next-cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209171611176.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">在TKE里安装和使用Traefik Ingress</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/post/1ed7eb83.html" title="missing-container-metrics部署安装和使用"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209180021460.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-09-17</div><div class="title">missing-container-metrics部署安装和使用</div></div></a></div><div><a href="/post/e3ad72ca.html" title="Helm安装和使用"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/helm-20220831.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-06-02</div><div class="title">Helm安装和使用</div></div></a></div><div><a href="/post/76f3febd.html" title="Kubernetes中pod数据存储"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209031845569.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-05-26</div><div class="title">Kubernetes中pod数据存储</div></div></a></div><div><a href="/post/e0d4c727.html" title="Kubernetes容器资源限制和lxcfs问题"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209041949439.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-06-01</div><div class="title">Kubernetes容器资源限制和lxcfs问题</div></div></a></div><div><a href="/post/7af4624e.html" title="Kubernetes部署nacos服务"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/微信图片_20220828001026.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-05-27</div><div class="title">Kubernetes部署nacos服务</div></div></a></div><div><a href="/post/24ba3d3c.html" title="Kubernetes部署主从架构Mysql集群"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209041750814.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-05-28</div><div class="title">Kubernetes部署主从架构Mysql集群</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">JingWei Chen</div><div class="author-info__description">抬头，微笑，你好</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">14</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><a id="card-info-btn" href="https://blog.chen1900s.cn/"><i class="iconfont icon-CSDN"></i><span>My Blog</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/chen1900s" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="/chen1900s@163.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="tencent://AddContact/?fromId=45&amp;fromSubId=1&amp;subcmd=all&amp;uin=728831102&amp;website=www.oicqzone.com" target="_blank" title="QQ"><i class="fab fa-qq"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">刚开始写博客，欢迎大家来吐槽</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%83%A8%E7%BD%B2%E5%AE%89%E8%A3%85"><span class="toc-number">2.</span> <span class="toc-text">部署安装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8Eprometheus%E9%9B%86%E6%88%90"><span class="toc-number">3.</span> <span class="toc-text">与prometheus集成</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8Emetric-server%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="toc-number">4.</span> <span class="toc-text">与metric-server的对比</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%98%E5%8C%96%E7%82%B9%E5%92%8C%E9%97%AE%E9%A2%98"><span class="toc-number">5.</span> <span class="toc-text">优化点和问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3yaml%E6%96%87%E4%BB%B6"><span class="toc-number">6.</span> <span class="toc-text">相关yaml文件</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/post/1ed7eb83.html" title="missing-container-metrics部署安装和使用"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209180021460.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="missing-container-metrics部署安装和使用"/></a><div class="content"><a class="title" href="/post/1ed7eb83.html" title="missing-container-metrics部署安装和使用">missing-container-metrics部署安装和使用</a><time datetime="2022-09-17T14:33:37.000Z" title="发表于 2022-09-17 22:33:37">2022-09-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/b9437839.html" title="Kube-state-metrics部署安装"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172031080.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Kube-state-metrics部署安装"/></a><div class="content"><a class="title" href="/post/b9437839.html" title="Kube-state-metrics部署安装">Kube-state-metrics部署安装</a><time datetime="2022-09-17T12:29:11.000Z" title="发表于 2022-09-17 20:29:11">2022-09-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/94ad787b.html" title="在TKE里安装和使用Traefik Ingress"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209171611176.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="在TKE里安装和使用Traefik Ingress"/></a><div class="content"><a class="title" href="/post/94ad787b.html" title="在TKE里安装和使用Traefik Ingress">在TKE里安装和使用Traefik Ingress</a><time datetime="2020-06-07T08:14:33.000Z" title="发表于 2020-06-07 16:14:33">2020-06-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/b81d5734.html" title="在TKE容器集群中使用sysctl"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209031845569.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="在TKE容器集群中使用sysctl"/></a><div class="content"><a class="title" href="/post/b81d5734.html" title="在TKE容器集群中使用sysctl">在TKE容器集群中使用sysctl</a><time datetime="2020-06-06T06:30:03.000Z" title="发表于 2020-06-06 14:30:03">2020-06-06</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/6763f77d.html" title="自建Harbor镜像仓库"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209042230824.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="自建Harbor镜像仓库"/></a><div class="content"><a class="title" href="/post/6763f77d.html" title="自建Harbor镜像仓库">自建Harbor镜像仓库</a><time datetime="2020-06-05T15:58:58.000Z" title="发表于 2020-06-05 23:58:58">2020-06-05</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url('https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209031854794.jpg')"><div id="footer-wrap"><div class="copyright">&copy;2018 - 2022  <i id="heartbeat" class="fa fas fa-heartbeat"></i> JingWei Chen</div><div class="footer_custom_text">welcome to my <a href="https://blog.chen1900s.cn">blog</a>!</div></div><link rel="stylesheet" href="https://fastly.jsdelivr.net/gh/HCLonely/images@master/others/heartbeat.min.css"></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="translateLink" type="button" title="简繁转换">简</button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="chat_btn" type="button" title="聊天"><i class="fas fa-sms"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'vQGGuuDa77AhD7ncbneaP0hc-gzGzoHsz',
+      appKey: 'Sd5qU4npE8D2fNMMkhkzdF9F',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !false) {
+  if (false) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script></div><script type="text/javascript" src="/js/fairyDustCursor.js"></script><div class="aplayer no-destroy" data-id="7607717868" data-server="netease" data-type="playlist" data-fixed="true" data-mini="true" data-listFolded="false" data-order="random" data-lrctype="1" data-preload="none" data-autoplay="false" muted></div><script defer="defer" id="fluttering_ribbon" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-fluttering-ribbon.min.js"></script><script>(function(d, w, c) {
+    w.ChatraID = 'ndgXjuGW8XFPQMnN2';
+    var s = d.createElement('script');
+    w[c] = w[c] || function() {
+        (w[c].q = w[c].q || []).push(arguments);
+    };
+    s.async = true;
+    s.src = 'https://call.chatra.io/chatra.js';
+    if (d.head) d.head.appendChild(s);
+})(document, window, 'Chatra');
+
+if (true) {
+  var chatBtnFn = () => {
+    var chatBtn = document.getElementById("chat_btn")
+    chatBtn.addEventListener("click", function(){
+      Chatra('openChat')
+    });
+  }
+  chatBtnFn()
+} else {
+  if (true) {
+    function chatBtnHide () {
+      Chatra('hide')
+    }
+    function chatBtnShow () {
+      Chatra('show')
+    }
+  }
+}</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/metingjs/dist/Meting.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>let pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+
+  // removeEventListener scroll 
+  window.tocScrollFn && window.removeEventListener('scroll', window.tocScrollFn)
+  window.scrollCollect && window.removeEventListener('scroll', scrollCollect)
+
+  typeof preloader === 'object' && preloader.initLoading()
+  document.getElementById('rightside').style.cssText = "opacity: ''; transform: ''"
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+
+  typeof disqusjs === 'object' && disqusjs.destroy()
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof chatBtnFn === 'function' && chatBtnFn()
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+
+  typeof preloader === 'object' && preloader.endLoading()
+})
+
+document.addEventListener('pjax:error', (e) => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

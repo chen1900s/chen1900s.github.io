@@ -1,0 +1,472 @@
+<!DOCTYPE html><html class="hide-aside" lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>missing-container-metrics部署安装和使用 | JingWei Chen</title><meta name="keywords" content="Kubernetes,Prometheus,Missing-container-metrics"><meta name="author" content="JingWei Chen"><meta name="copyright" content="JingWei Chen"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="missing-container-metrics监控pod oomkill">
+<meta property="og:type" content="article">
+<meta property="og:title" content="missing-container-metrics部署安装和使用">
+<meta property="og:url" content="https://blog.chen1900s.cn/post/1ed7eb83.html">
+<meta property="og:site_name" content="JingWei Chen">
+<meta property="og:description" content="missing-container-metrics监控pod oomkill">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209180021460.jpeg">
+<meta property="article:published_time" content="2022-09-17T14:33:37.000Z">
+<meta property="article:modified_time" content="2020-06-06T15:58:58.000Z">
+<meta property="article:author" content="JingWei Chen">
+<meta property="article:tag" content="Kubernetes">
+<meta property="article:tag" content="Prometheus">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209180021460.jpeg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://blog.chen1900s.cn/post/1ed7eb83"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: {"defaultEncoding":1,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"简"},
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":false,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"limitCount":50,"languages":{"author":"作者: JingWei Chen","link":"链接: ","source":"来源: JingWei Chen","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。"}},
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"bottom-left"},
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'missing-container-metrics部署安装和使用',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2020-06-06 23:58:58'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/self/duotone.css"><link rel="stylesheet" href="/css/iconfont.css"><link rel="stylesheet" href="/css/mycss.css"><link rel="stylesheet" href="/css/background.css"><meta name="generator" content="Hexo 6.2.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/avatar.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">14</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/messageboard/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page group hide" href="javascript:void(0);"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/game/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li><li><a class="site-page child" href="/photos/"><i class="fa-fw fa fa-camera-retro"></i><span> 相册</span></a></li><li><a class="site-page child" href="/book/"><i class="fa-fw fa fa-book"></i><span> 电子书</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于我</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209031854794.jpg')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">JingWei Chen</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/messageboard/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page group hide" href="javascript:void(0);"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/game/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li><li><a class="site-page child" href="/photos/"><i class="fa-fw fa fa-camera-retro"></i><span> 相册</span></a></li><li><a class="site-page child" href="/book/"><i class="fa-fw fa fa-book"></i><span> 电子书</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于我</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">missing-container-metrics部署安装和使用</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-09-17T14:33:37.000Z" title="发表于 2022-09-17 22:33:37">2022-09-17</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2020-06-06T15:58:58.000Z" title="更新于 2020-06-06 23:58:58">2020-06-06</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Kubernetes/">Kubernetes</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="missing-container-metrics部署安装和使用"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><blockquote>
+<p>本文主要介绍missing-container-metrics监控pod OOMKilled</p>
+</blockquote>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>Kubernetes 默认情况下使用 cAdvisor 以及 kube-state-metrics 来收集容器的各项指标，绝大多数场景下能够满足业务的基本的需求，但还是有所欠缺，比如缺少对以下几个指标的收集 </p>
+<ul>
+<li>OOM kill</li>
+<li>容器重启的次数</li>
+<li>容器的退出码</li>
+</ul>
+<p>missing-container-metrics 这个metrics 弥补了 cAdvisor 的缺陷，新增了以上几个指标，用户可以利用这些指标迅速定位某些故障。例如，假设某个容器有多个子进程，其中某个子进程被 OOM kill，但容器还在运行，如果不对 OOM kill 进行监控，用户很难对故障进行定位 </p>
+<h2 id="安装部署"><a href="#安装部署" class="headerlink" title="安装部署"></a>安装部署</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="https://artifacthub.io/packages/helm/missing-container-metrics/missing-container-metrics">missing-container-metrics项目介绍</a></p>
+</blockquote>
+<p><strong>1，添加helm仓库</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">helm repo add missing-container-metrics https://draganm.github.io/missing-container-metrics<br></code></pre></td></tr></table></figure>
+
+<p><strong>2， 下载helm到本地，可以修改对应的 value.yaml</strong> </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">helm pull missing-container-metrics/missing-container-metrics<br>tar xvf missing-container-metrics-0.1.1.tgz<br>cd  missing-container-metrics <br>ls <br>Chart.yaml  README.md  templates  values.yaml<br></code></pre></td></tr></table></figure>
+
+<p><strong>3， 可配置项</strong> </p>
+<table>
+<thead>
+<tr>
+<th align="left">变量</th>
+<th align="left">描述说明</th>
+<th align="left">默认值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">image.repository</td>
+<td align="left">镜像名称</td>
+<td align="left"><code>dmilhdef/missing-container-metrics</code></td>
+</tr>
+<tr>
+<td align="left">image.pullPolicy</td>
+<td align="left">镜像拉取策略</td>
+<td align="left"><code>IfNotPresent</code></td>
+</tr>
+<tr>
+<td align="left">image.tag</td>
+<td align="left">镜像tag</td>
+<td align="left"><code>v0.21.0</code></td>
+</tr>
+<tr>
+<td align="left">imagePullSecrets</td>
+<td align="left">拉取镜像的secret</td>
+<td align="left"><code>[]</code></td>
+</tr>
+<tr>
+<td align="left">nameOverride</td>
+<td align="left">覆盖生成的图表名称。默认为 .Chart.Name。</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">fullnameOverride</td>
+<td align="left">覆盖生成的版本名称。默认为 .Release.Name。</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">podAnnotations</td>
+<td align="left">Pod 的Annotations</td>
+<td align="left"><code>&#123;&quot;prometheus.io/scrape&quot;: &quot;true&quot;, &quot;prometheus.io/port&quot;: &quot;3001&quot;&#125;</code></td>
+</tr>
+<tr>
+<td align="left">podSecurityContext</td>
+<td align="left">为 pod 设置安全上下文</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">securityContext</td>
+<td align="left">为 pod 中的容器设置安全上下文</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">resources</td>
+<td align="left">PU&#x2F;内存资源请求&#x2F;限制</td>
+<td align="left"><code>&#123;&#125;</code></td>
+</tr>
+<tr>
+<td align="left">useDocker</td>
+<td align="left">从 Docker 获取容器信息,如果容器运行时为docker ,设置为true</td>
+<td align="left"><code>false</code></td>
+</tr>
+<tr>
+<td align="left">useContainerd</td>
+<td align="left">从 Containerd 获取容器信息,如果容器运行时为containers ,设置为true</td>
+<td align="left"><code>true</code></td>
+</tr>
+</tbody></table>
+<p>由于我们集群的运行时是docker的 所以需要修改<code>missing-container-metrics/values.yaml</code>  中&#96;&#96;useDocker<code>为</code><br>true&#96;，然后安装</p>
+<p><strong>4，执行安装</strong> </p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># kubectl create namespace missing-container-metrics</span><br><span class="hljs-comment"># helm install missing-container-metrics  missing-container-metrics -n missing-container-metrics</span><br>NAME: missing-container-metrics<br>LAST DEPLOYED: Sun Jun 26 13:32:43 2022<br>NAMESPACE: missing-container-metrics<br>STATUS: deployed<br>REVISION: 1<br>TEST SUITE: None<br><br><br><span class="hljs-comment">#helm  -n missing-container-metrics list</span><br>NAME     NAMESPACE       REVISION        UPDATED     STATUS          CHART                           APP VERSION<br>missing-container-metrics       missing-container-metrics     1               2022-09-17 22:43:56.998806908 +0800 CST deployed        missing-container-metrics-0.1.1 0.21.0     <br><br><br>[root@VM-249-130-tlinux ~]<span class="hljs-comment"># kubectl  -n missing-container-metrics  get  pods | grep missing-container-metrics</span><br>missing-container-metrics-bf7gq       1/1     Running   0          60s<br></code></pre></td></tr></table></figure>
+
+<p> 可以通过访问服务的3001端口查看metrics,例如 </p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash"><span class="hljs-comment">#curl 172.16.0.29:3001/metrics   | grep memory-request-limit</span><br></code></pre></td></tr></table></figure>
+
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172250764.png" alt="image-20220917225037666"></p>
+<p>服务公开了如下的指标：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>container_restarts</td>
+<td>容器的重启次数</td>
+</tr>
+<tr>
+<td>container_ooms</td>
+<td>容器的 OOM 杀死数。这涵盖了容器 cgroup 中任何进程的 OOM 终止</td>
+</tr>
+<tr>
+<td>container_last_exit_code</td>
+<td>容器的最后退出代码</td>
+</tr>
+</tbody></table>
+<p>每一个指标包含如下标签：</p>
+<table>
+<thead>
+<tr>
+<th>指标ID</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>docker_container_id</td>
+<td>容器的完整 ID</td>
+</tr>
+<tr>
+<td>container_short_id</td>
+<td>Docker 容器 ID 的前 6 个字节</td>
+</tr>
+<tr>
+<td>docker_container_id</td>
+<td>容器 id 以与 kubernetes pod 指标相同的格式表示 - 以容器运行时为前缀<code>docker://</code><br />并<code>containerd://取决于容器运行时。这使得 Prometheus 中的</code>kube_pod_container_info&#96;&#96;</td>
+</tr>
+<tr>
+<td>name</td>
+<td>容器的名称</td>
+</tr>
+<tr>
+<td>image_id</td>
+<td>镜像id 以与 k8s pod 的指标相同的格式表示。这使得 Prometheus 中的<code>kube_pod_container_info</code></td>
+</tr>
+<tr>
+<td>pod</td>
+<td>如果<code>io.kubernetes.pod.name</code>在容器上设置了<code>pod </code>标签，则其值将设置为指标中的标签</td>
+</tr>
+<tr>
+<td>namespace</td>
+<td>如果<code>io.kubernetes.pod.namespace容器上设置了</code>namespace&#96;标签，则其值将设置为指标的标签</td>
+</tr>
+</tbody></table>
+<h2 id="与自建prometheus集成"><a href="#与自建prometheus集成" class="headerlink" title="与自建prometheus集成"></a>与自建prometheus集成</h2><p>1，修改prometheus配置文件</p>
+<blockquote>
+<p>kube-state-metrics是部署在kube-system命名空间下的，因此在正则匹配上，命名空间为kube-system，svc名称为missing-container-metrics，否则就不进行监控</p>
+</blockquote>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><code class="hljs yaml">  <span class="hljs-attr">job_name:</span> <span class="hljs-string">&quot;missing-container-metrics&quot;</span><br>  <span class="hljs-attr">kubernetes_sd_configs:</span><br>   <span class="hljs-bullet">-</span> <span class="hljs-attr">role:</span> <span class="hljs-string">endpoints</span><br>  <span class="hljs-attr">relabel_configs:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-attr">source_labels:</span> [<span class="hljs-string">__meta_kubernetes_namespace</span>, <span class="hljs-string">__meta_kubernetes_endpoints_name</span>]<br>    <span class="hljs-attr">regex:</span> <span class="hljs-string">missing-container-metrics;missing-container-metrics</span><br>    <span class="hljs-attr">action:</span> <span class="hljs-string">keep</span><br><span class="hljs-bullet">-</span> <span class="hljs-attr">bearer_token_file:</span> <span class="hljs-string">/var/run/secrets/kubernetes.io/serviceaccount/token</span><br></code></pre></td></tr></table></figure>
+
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172307683.png" alt="image-20220917230740611"></p>
+<p>由于helm部署只部署了<strong>DaemonSet</strong> ，可以手动创建一个svc</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">v1</span><br><span class="hljs-attr">kind:</span> <span class="hljs-string">Service</span><br><span class="hljs-attr">metadata:</span><br>  <span class="hljs-attr">name:</span> <span class="hljs-string">missing-container-metrics</span><br>  <span class="hljs-attr">namespace:</span> <span class="hljs-string">missing-container-metrics</span><br><span class="hljs-attr">spec:</span><br>  <span class="hljs-attr">ports:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-number">3001</span><span class="hljs-number">-3001</span><span class="hljs-string">-tcp-2tsffjchpoi</span><br>    <span class="hljs-attr">port:</span> <span class="hljs-number">3001</span><br>    <span class="hljs-attr">protocol:</span> <span class="hljs-string">TCP</span><br>    <span class="hljs-attr">targetPort:</span> <span class="hljs-number">3001</span><br>  <span class="hljs-attr">selector:</span><br>    <span class="hljs-attr">app.kubernetes.io/instance:</span> <span class="hljs-string">missing-container-metrics</span><br>    <span class="hljs-attr">app.kubernetes.io/name:</span> <span class="hljs-string">missing-container-metrics</span><br>  <span class="hljs-attr">sessionAffinity:</span> <span class="hljs-string">None</span><br>  <span class="hljs-attr">type:</span> <span class="hljs-string">ClusterIP</span><br><br></code></pre></td></tr></table></figure>
+
+<p>查看prometheus的targets</p>
+<p>部署成功后，prometheus的target会出现如下标志</p>
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172310497.png" alt="image-20220917231019436"></p>
+<p>创建告警规则</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">###添加<br>prometheusOperator:<br>  podMonitor:<br>    # Create a Prometheus Operator PodMonitor resource<br>    enabled: true<br>    # Namespace defaults to the Release namespace but can be overridden<br>    namespace: &quot;&quot;<br>    # Additional labels to add to the PodMonitor so it matches the Operator&#x27;s podMonitorSelector<br>    selector:<br>      app.kubernetes.io/name: missing-container-metrics<br><br>  prometheusRule:<br>    # Create a Prometheus Operator PrometheusRule resource<br>    enabled: true<br>    # Namespace defaults to the Release namespace but can be overridden<br>    namespace: &quot;&quot;<br>    # Additional labels to add to the PrometheusRule so it matches the Operator&#x27;s ruleSelector<br>    selector:<br>      prometheus: k8s<br>      role: alert-rules<br>    # The rules can be set here. An example is defined here but can be overridden.<br>    rules:<br>    - alert: ContainerOOMObserved<br>      annotations:<br>        message: A process in this Pod has been OOMKilled due to exceeding the Kubernetes memory limit at least twice in the last 15 minutes. Look at the metrics to determine if a memory limit increase is required.<br>      expr: sum(increase(container_ooms[15m])) by (exported_namespace, exported_pod) &gt; 2<br>      labels:<br>        severity: warning<br>    - alert: ContainerOOMObserved<br>      annotations:<br>        message: A process in this Pod has been OOMKilled due to exceeding the Kubernetes memory limit at least ten times in the last 15 minutes. Look at the metrics to determine if a memory limit increase is required.<br>      expr: sum(increase(container_ooms[15m])) by (exported_namespace, exported_pod) &gt; 10<br>      labels:<br>        severity: critical<br></code></pre></td></tr></table></figure>
+
+
+
+<p>2，模拟OOM</p>
+<p>创建一个 Pod，尝试分配超出其限制的内存。 这是一个 Pod 的配置文件，其拥有一个容器，该容器的内存请求为 50 MiB，内存限制为 100 MiB：<br>在配置文件的 <code>args</code> 部分中，你可以看到容器会尝试分配 250 MiB 内存，这远高于 100 MiB 的限制。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">apiVersion: apps/v1<br>kind: Deployment<br>metadata:<br>  labels:<br>    k8s-app: memory-request-limit<br>    qcloud-app: memory-request-limit<br>  name: memory-request-limit<br>  namespace: default<br>spec:<br>  replicas: 1<br>  selector:<br>    matchLabels:<br>      k8s-app: memory-request-limit<br>      qcloud-app: memory-request-limit<br>  template:<br>    metadata:<br>      labels:<br>        k8s-app: memory-request-limit<br>        qcloud-app: memory-request-limit<br>    spec:<br>      containers:<br>      - args:<br>        - --vm<br>        - &quot;1&quot;<br>        - --vm-bytes<br>        - 250M<br>        - --vm-hang<br>        - &quot;1&quot;<br>        command:<br>        - stress<br>        image: polinux/stress:latest<br>        imagePullPolicy: IfNotPresent<br>        name: memory-demo-ctr<br>        resources:<br>          limits:<br>            memory: 100Mi<br>          requests:<br>            memory: 50Mi<br></code></pre></td></tr></table></figure>
+
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209180008639.png" alt="image-20220918000817592"></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">sum</span>(increase(container_ooms[15m])) by (exported_namespace, exported_pod) &gt; 3<br></code></pre></td></tr></table></figure>
+
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172323238.png" alt="image-20220917232300114"></p>
+<h2 id="云原生监控TMP使用missing-container-metrics"><a href="#云原生监控TMP使用missing-container-metrics" class="headerlink" title="云原生监控TMP使用missing-container-metrics"></a>云原生监控TMP使用missing-container-metrics</h2><p>1，添加数据采集配置  </p>
+<p>登陆Promtheus 监控控制台，选择集群监控&gt; 数据采集配置&gt;自定义监控&gt; 新增数据采集配置</p>
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172332533.png" alt="image-20220917233213424"></p>
+<p>2，查看当前采集，如下图所示，表示已经采集到监控数据</p>
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172335898.png" alt="image-20220917233503809"></p>
+<p>3， 配置告警规则prometheusRule </p>
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172345261.png" alt="image-20220917234532164"></p>
+<p>查看告警历史</p>
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209180036206.png" alt="image-20220918003616097"></p>
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209180050304.png" alt="image-20220918005055241"></p>
+<p>参考文档：<a target="_blank" rel="noopener" href="https://github.com/draganm/missing-container-metrics">https://github.com/draganm/missing-container-metrics</a></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://blog.chen1900s.cn">JingWei Chen</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://blog.chen1900s.cn/post/1ed7eb83.html">https://blog.chen1900s.cn/post/1ed7eb83.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://blog.chen1900s.cn" target="_blank">JingWei Chen</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Kubernetes/">Kubernetes</a><a class="post-meta__tags" href="/tags/Prometheus/">Prometheus</a></div><div class="post_share"><div class="social-share" data-image="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209180021460.jpeg" data-sites="wechat,qq,weibo"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.png" target="_blank"><img class="post-qr-code-img" src="/img/wechat.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.png" target="_blank"><img class="post-qr-code-img" src="/img/alipay.png" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/post/b9437839.html"><img class="next-cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172031080.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Kube-state-metrics部署安装</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/post/b9437839.html" title="Kube-state-metrics部署安装"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172031080.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-09-17</div><div class="title">Kube-state-metrics部署安装</div></div></a></div><div><a href="/post/e3ad72ca.html" title="Helm安装和使用"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/helm-20220831.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-06-02</div><div class="title">Helm安装和使用</div></div></a></div><div><a href="/post/76f3febd.html" title="Kubernetes中pod数据存储"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209031845569.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-05-26</div><div class="title">Kubernetes中pod数据存储</div></div></a></div><div><a href="/post/e0d4c727.html" title="Kubernetes容器资源限制和lxcfs问题"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209041949439.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-06-01</div><div class="title">Kubernetes容器资源限制和lxcfs问题</div></div></a></div><div><a href="/post/7af4624e.html" title="Kubernetes部署nacos服务"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/微信图片_20220828001026.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-05-27</div><div class="title">Kubernetes部署nacos服务</div></div></a></div><div><a href="/post/24ba3d3c.html" title="Kubernetes部署主从架构Mysql集群"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209041750814.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-05-28</div><div class="title">Kubernetes部署主从架构Mysql集群</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">JingWei Chen</div><div class="author-info__description">抬头，微笑，你好</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">14</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><a id="card-info-btn" href="https://blog.chen1900s.cn/"><i class="iconfont icon-CSDN"></i><span>My Blog</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/chen1900s" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="/chen1900s@163.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="tencent://AddContact/?fromId=45&amp;fromSubId=1&amp;subcmd=all&amp;uin=728831102&amp;website=www.oicqzone.com" target="_blank" title="QQ"><i class="fab fa-qq"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">刚开始写博客，欢迎大家来吐槽</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2"><span class="toc-number">2.</span> <span class="toc-text">安装部署</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8E%E8%87%AA%E5%BB%BAprometheus%E9%9B%86%E6%88%90"><span class="toc-number">3.</span> <span class="toc-text">与自建prometheus集成</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%91%E5%8E%9F%E7%94%9F%E7%9B%91%E6%8E%A7TMP%E4%BD%BF%E7%94%A8missing-container-metrics"><span class="toc-number">4.</span> <span class="toc-text">云原生监控TMP使用missing-container-metrics</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/post/1ed7eb83.html" title="missing-container-metrics部署安装和使用"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209180021460.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="missing-container-metrics部署安装和使用"/></a><div class="content"><a class="title" href="/post/1ed7eb83.html" title="missing-container-metrics部署安装和使用">missing-container-metrics部署安装和使用</a><time datetime="2022-09-17T14:33:37.000Z" title="发表于 2022-09-17 22:33:37">2022-09-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/b9437839.html" title="Kube-state-metrics部署安装"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172031080.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Kube-state-metrics部署安装"/></a><div class="content"><a class="title" href="/post/b9437839.html" title="Kube-state-metrics部署安装">Kube-state-metrics部署安装</a><time datetime="2022-09-17T12:29:11.000Z" title="发表于 2022-09-17 20:29:11">2022-09-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/94ad787b.html" title="在TKE里安装和使用Traefik Ingress"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209171611176.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="在TKE里安装和使用Traefik Ingress"/></a><div class="content"><a class="title" href="/post/94ad787b.html" title="在TKE里安装和使用Traefik Ingress">在TKE里安装和使用Traefik Ingress</a><time datetime="2020-06-07T08:14:33.000Z" title="发表于 2020-06-07 16:14:33">2020-06-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/b81d5734.html" title="在TKE容器集群中使用sysctl"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209031845569.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="在TKE容器集群中使用sysctl"/></a><div class="content"><a class="title" href="/post/b81d5734.html" title="在TKE容器集群中使用sysctl">在TKE容器集群中使用sysctl</a><time datetime="2020-06-06T06:30:03.000Z" title="发表于 2020-06-06 14:30:03">2020-06-06</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/6763f77d.html" title="自建Harbor镜像仓库"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209042230824.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="自建Harbor镜像仓库"/></a><div class="content"><a class="title" href="/post/6763f77d.html" title="自建Harbor镜像仓库">自建Harbor镜像仓库</a><time datetime="2020-06-05T15:58:58.000Z" title="发表于 2020-06-05 23:58:58">2020-06-05</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url('https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209031854794.jpg')"><div id="footer-wrap"><div class="copyright">&copy;2018 - 2022  <i id="heartbeat" class="fa fas fa-heartbeat"></i> JingWei Chen</div><div class="footer_custom_text">welcome to my <a href="https://blog.chen1900s.cn">blog</a>!</div></div><link rel="stylesheet" href="https://fastly.jsdelivr.net/gh/HCLonely/images@master/others/heartbeat.min.css"></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="translateLink" type="button" title="简繁转换">简</button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="chat_btn" type="button" title="聊天"><i class="fas fa-sms"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'vQGGuuDa77AhD7ncbneaP0hc-gzGzoHsz',
+      appKey: 'Sd5qU4npE8D2fNMMkhkzdF9F',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !false) {
+  if (false) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script></div><script type="text/javascript" src="/js/fairyDustCursor.js"></script><div class="aplayer no-destroy" data-id="7607717868" data-server="netease" data-type="playlist" data-fixed="true" data-mini="true" data-listFolded="false" data-order="random" data-lrctype="1" data-preload="none" data-autoplay="false" muted></div><script defer="defer" id="fluttering_ribbon" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-fluttering-ribbon.min.js"></script><script>(function(d, w, c) {
+    w.ChatraID = 'ndgXjuGW8XFPQMnN2';
+    var s = d.createElement('script');
+    w[c] = w[c] || function() {
+        (w[c].q = w[c].q || []).push(arguments);
+    };
+    s.async = true;
+    s.src = 'https://call.chatra.io/chatra.js';
+    if (d.head) d.head.appendChild(s);
+})(document, window, 'Chatra');
+
+if (true) {
+  var chatBtnFn = () => {
+    var chatBtn = document.getElementById("chat_btn")
+    chatBtn.addEventListener("click", function(){
+      Chatra('openChat')
+    });
+  }
+  chatBtnFn()
+} else {
+  if (true) {
+    function chatBtnHide () {
+      Chatra('hide')
+    }
+    function chatBtnShow () {
+      Chatra('show')
+    }
+  }
+}</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/metingjs/dist/Meting.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>let pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+
+  // removeEventListener scroll 
+  window.tocScrollFn && window.removeEventListener('scroll', window.tocScrollFn)
+  window.scrollCollect && window.removeEventListener('scroll', scrollCollect)
+
+  typeof preloader === 'object' && preloader.initLoading()
+  document.getElementById('rightside').style.cssText = "opacity: ''; transform: ''"
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+
+  typeof disqusjs === 'object' && disqusjs.destroy()
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof chatBtnFn === 'function' && chatBtnFn()
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+
+  typeof preloader === 'object' && preloader.endLoading()
+})
+
+document.addEventListener('pjax:error', (e) => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
