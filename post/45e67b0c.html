@@ -1,0 +1,324 @@
+<!DOCTYPE html><html class="hide-aside" lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>TKE集群NFS动态创建子目录挂载 | JingWei Chen</title><meta name="keywords" content="Kubernetes,NFS"><meta name="author" content="JingWei Chen"><meta name="copyright" content="JingWei Chen"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Kubernetes NFS Subdir External Provisioner组件介绍">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TKE集群NFS动态创建子目录挂载">
+<meta property="og:url" content="https://blog.chen1900s.cn/post/45e67b0c.html">
+<meta property="og:site_name" content="JingWei Chen">
+<meta property="og:description" content="Kubernetes NFS Subdir External Provisioner组件介绍">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209181138830.jpeg">
+<meta property="article:published_time" content="2022-09-19T05:06:53.000Z">
+<meta property="article:modified_time" content="2022-09-06T15:58:58.000Z">
+<meta property="article:author" content="JingWei Chen">
+<meta property="article:tag" content="Kubernetes">
+<meta property="article:tag" content="NFS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209181138830.jpeg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://blog.chen1900s.cn/post/45e67b0c"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: {"defaultEncoding":1,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"简"},
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":false,"highlightHeightLimit":300},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"limitCount":50,"languages":{"author":"作者: JingWei Chen","link":"链接: ","source":"来源: JingWei Chen","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。"}},
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#1f1f1f","position":"bottom-left"},
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'TKE集群NFS动态创建子目录挂载',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2022-09-06 23:58:58'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/self/duotone.css"><link rel="stylesheet" href="/css/iconfont.css"><link rel="stylesheet" href="/css/mycss.css"><link rel="stylesheet" href="/css/background.css"><meta name="generator" content="Hexo 6.2.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/avatar.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">17</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">12</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/messageboard/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page group hide" href="javascript:void(0);"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/game/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li><li><a class="site-page child" href="/photos/"><i class="fa-fw fa fa-camera-retro"></i><span> 相册</span></a></li><li><a class="site-page child" href="/book/"><i class="fa-fw fa fa-book"></i><span> 电子书</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于我</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209031854794.jpg')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">JingWei Chen</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/messageboard/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page group hide" href="javascript:void(0);"><i class="fa-fw fas fa-list"></i><span> 娱乐</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li><li><a class="site-page child" href="/game/"><i class="fa-fw fas fa-gamepad"></i><span> 游戏</span></a></li><li><a class="site-page child" href="/photos/"><i class="fa-fw fa fa-camera-retro"></i><span> 相册</span></a></li><li><a class="site-page child" href="/book/"><i class="fa-fw fa fa-book"></i><span> 电子书</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于我</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">TKE集群NFS动态创建子目录挂载</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-09-19T05:06:53.000Z" title="发表于 2022-09-19 13:06:53">2022-09-19</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2022-09-06T15:58:58.000Z" title="更新于 2022-09-06 23:58:58">2022-09-06</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/TKE/">TKE</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="TKE集群NFS动态创建子目录挂载"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p><a target="_blank" rel="noopener" href="https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner">NFS subdir external provisioner</a>组件是使用现有的和已配置的NFS服务器来支持通过持久卷声明动态分发Kubernetes持久卷。持久化卷按以下方式命名${namespace}-${pvcName}-${pvName}，在Kubernetes 环境中我们经常遇到是一个PV对应一个NFS实例场景，针对这种场景如果需要多个PVC&amp;PV使用一个NFS实例，就需要提前根据NFS不同子目录创建大量的PV等待PVC去绑定，不太好维护，可以使用<a target="_blank" rel="noopener" href="https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner">nfs-subdir-external-provisioner</a>插件来实现动态创建子目录的需求，下面主要来介绍下</p>
+<h2 id="部署安装"><a href="#部署安装" class="headerlink" title="部署安装"></a>部署安装</h2><p>环境准备：</p>
+<ul>
+<li>kubernetes集群一个，我这里是使用的是腾讯云TKE集群</li>
+<li>NFS服务器实例，或者使用云厂商提供的NFS产品</li>
+<li>helm客户端，并且能够正常链接到集群</li>
+</ul>
+<h3 id="Helm方式安装"><a href="#Helm方式安装" class="headerlink" title="Helm方式安装"></a>Helm方式安装</h3><p>可以根据需求修改指定参数后部署</p>
+<blockquote>
+<p>确保您的NFS服务器可以从您的Kubernetes集群访问，并获取连接到它所需的信息。至少需要它的主机名和共享路径。</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash">$ helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/<br><br><span class="hljs-comment"># helm repo list  #查看添加helm repo仓库情况</span><br>NAME                            URL                                                               <br>tcr-chen-helm                   https://tcr-chen.tencentcloudcr.com/chartrepo/helm                <br>nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/<br><br><span class="hljs-comment"># 【可选步骤，可以将helm chart 包下载下来 上传到自己的镜像仓库，方便后续其他集群安装】</span><br><span class="hljs-comment"># 下载 helm chart 文件至本地目录，查看可以指定的 values 选项（可选）</span><br>$ helm pull nfs-subdir-external-provisioner/nfs-subdir-external-provisioner --untar<br>$ tar  zcvf nfs-subdir-external-provisioner-1.0.0.tgz nfs-subdir-external-provisioner/<br>$ helm cm-push nfs-subdir-external-provisioner-1.0.0.tgz  tcr-chen-helm<br><span class="hljs-comment"># 默认镜像是国外镜像，可以下载下来上传到自己的镜像仓库里面</span><br>$ docker pull k8s.gcr.io/sig-storage/nfs-subdir-external-provisioner:v4.0.2<br>$ docker tag 932b0bface75 ccr.ccs.tencentyun.com/chenjingwei/nfs-subdir-external-provisioner:v4.0.2<br>$ docker push ccr.ccs.tencentyun.com/chenjingwei/nfs-subdir-external-provisioner:v4.0.2<br><br><br><br><span class="hljs-comment"># 使用类似下面命令安装 nfs-subdir-external-provisioner 资源</span><br><span class="hljs-comment">#  helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner  \</span><br>--<span class="hljs-built_in">set</span> nfs.server=172.16.0.33  \<br>--<span class="hljs-built_in">set</span> nfs.path=/nfs  \<br>--<span class="hljs-built_in">set</span> image.repository=ccr.ccs.tencentyun.com/chenjingwei/nfs-subdir-external-provisioner \<br>--<span class="hljs-built_in">set</span> image.tag=v4.0.2<br><br><span class="hljs-comment">#出现如下提示 表示安装成功</span><br>NAME: nfs-subdir-external-provisioner<br>LAST DEPLOYED: Tue Feb 15 13:22:03 2022<br>NAMESPACE: default<br>STATUS: deployed<br>REVISION: 1<br>TEST SUITE: Non<br></code></pre></td></tr></table></figure>
+
+<h3 id="手动YAML安装"><a href="#手动YAML安装" class="headerlink" title="手动YAML安装"></a>手动YAML安装</h3><p>1，创建账号ServiceAccount</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">apiVersion: v1<br>kind: ServiceAccount<br>metadata:<br>  name: nfs-client-provisioner<br>  # replace with namespace where provisioner is deployed<br>  namespace: default<br>---<br>kind: ClusterRole<br>apiVersion: rbac.authorization.k8s.io/v1<br>metadata:<br>  name: nfs-client-provisioner-runner<br>rules:<br>  - apiGroups: [&quot;&quot;]<br>    resources: [&quot;nodes&quot;]<br>    verbs: [&quot;get&quot;, &quot;list&quot;, &quot;watch&quot;]<br>  - apiGroups: [&quot;&quot;]<br>    resources: [&quot;persistentvolumes&quot;]<br>    verbs: [&quot;get&quot;, &quot;list&quot;, &quot;watch&quot;, &quot;create&quot;, &quot;delete&quot;]<br>  - apiGroups: [&quot;&quot;]<br>    resources: [&quot;persistentvolumeclaims&quot;]<br>    verbs: [&quot;get&quot;, &quot;list&quot;, &quot;watch&quot;, &quot;update&quot;]<br>  - apiGroups: [&quot;storage.k8s.io&quot;]<br>    resources: [&quot;storageclasses&quot;]<br>    verbs: [&quot;get&quot;, &quot;list&quot;, &quot;watch&quot;]<br>  - apiGroups: [&quot;&quot;]<br>    resources: [&quot;events&quot;]<br>    verbs: [&quot;create&quot;, &quot;update&quot;, &quot;patch&quot;]<br>---<br>kind: ClusterRoleBinding<br>apiVersion: rbac.authorization.k8s.io/v1<br>metadata:<br>  name: run-nfs-client-provisioner<br>subjects:<br>  - kind: ServiceAccount<br>    name: nfs-client-provisioner<br>    # replace with namespace where provisioner is deployed<br>    namespace: default<br>roleRef:<br>  kind: ClusterRole<br>  name: nfs-client-provisioner-runner<br>  apiGroup: rbac.authorization.k8s.io<br>---<br>kind: Role<br>apiVersion: rbac.authorization.k8s.io/v1<br>metadata:<br>  name: leader-locking-nfs-client-provisioner<br>  # replace with namespace where provisioner is deployed<br>  namespace: default<br>rules:<br>  - apiGroups: [&quot;&quot;]<br>    resources: [&quot;endpoints&quot;]<br>    verbs: [&quot;get&quot;, &quot;list&quot;, &quot;watch&quot;, &quot;create&quot;, &quot;update&quot;, &quot;patch&quot;]<br>---<br>kind: RoleBinding<br>apiVersion: rbac.authorization.k8s.io/v1<br>metadata:<br>  name: leader-locking-nfs-client-provisioner<br>  # replace with namespace where provisioner is deployed<br>  namespace: default<br>subjects:<br>  - kind: ServiceAccount<br>    name: nfs-client-provisioner<br>    # replace with namespace where provisioner is deployed<br>    namespace: default<br>roleRef:<br>  kind: Role<br>  name: leader-locking-nfs-client-provisioner<br>  apiGroup: rbac.authorization.k8s.io<br></code></pre></td></tr></table></figure>
+
+<p>2，部署应用</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">apiVersion: apps/v1<br>kind: Deployment<br>metadata:<br>  name: nfs-client-provisioner<br>  labels:<br>    app: nfs-client-provisioner<br>  # replace with namespace where provisioner is deployed<br>  namespace: default<br>spec:<br>  replicas: 1<br>  strategy:<br>    type: Recreate<br>  selector:<br>    matchLabels:<br>      app: nfs-client-provisioner<br>  template:<br>    metadata:<br>      labels:<br>        app: nfs-client-provisioner<br>    spec:<br>      serviceAccountName: nfs-client-provisioner<br>      containers:<br>        - name: nfs-client-provisioner<br>          image: ccr.ccs.tencentyun.com/chenjingwei/nfs-subdir-external-provisioner:v4.0.2<br>          volumeMounts:<br>            - name: nfs-client-root<br>              mountPath: /persistentvolumes<br>          env:<br>            - name: PROVISIONER_NAME<br>              value: cluster.local/nfs-subdir-external-provisioner<br>            - name: NFS_SERVER<br>              value: 172.16.0.33              #替换成自己的NFS服务器地址<br>            - name: NFS_PATH<br>              value: /nfs                     #NFS上面的目录<br>      volumes:<br>        - name: nfs-client-root<br>          nfs:<br>            server: 172.16.0.33<br>            path: /nfs<br></code></pre></td></tr></table></figure>
+
+<p>3，创建storageClass</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">apiVersion: storage.k8s.io/v1<br>kind: StorageClass<br>metadata:<br>  name: nfs-client<br>provisioner: cluster.local/nfs-subdir-external-provisioner # or choose another name, must match deployment&#x27;s env PROVISIONER_NAME&#x27;<br>parameters:<br>  archiveOnDelete: &quot;false&quot;<br></code></pre></td></tr></table></figure>
+
+<h2 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h2><blockquote>
+<p>前提是nfs-subdir-external-provisioner组件已经正常运行</p>
+</blockquote>
+<p>1，配置使用 CFS 文件系统子目录的 PVC </p>
+<p>使用上一步部署的<code>nfs-subdir-external-provisioner</code>动态创建存储卷。</p>
+<p>部署后会默认生成一个<strong>StorageClass</strong>，默认存储类名是”nfs-client”(也可以在部署时自定义指定)，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext"># kubectl  get StorageClass | grep nfs-client<br>nfs-client          cluster.local/nfs-subdir-external-provisioner   4m8s<br></code></pre></td></tr></table></figure>
+
+<p>2，使用上面的<strong>StorageClass</strong>创建PVC</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext">kind: PersistentVolumeClaim<br>apiVersion: v1<br>metadata:<br>  name: nfs-subdir-pvc<br>  namespace: cjweichen<br>spec:<br>  storageClassName: nfs-client<br>  accessModes:<br>    - ReadWriteMany<br>  resources:<br>    requests:<br>      storage: 10Gi<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><code class="hljs plaintext"># kubectl  get pvc<br>NAME              STATUS   VOLUME                                   CAPACITY   ACCESS MODES   STORAGECLASS    AGE<br>nfs-subdir-pvc    Bound    pvc-5fdb9f45-6e98-4a9b-b6e0-920a6c7a6edc   10Gi       RWX           nfs-client    76s<br></code></pre></td></tr></table></figure>
+
+<p>会自动创建命令，命令命名方式是${namespace}-${pvcName}-${pvName}</p>
+<p>3，查看自动创建的PV配置</p>
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209191352233.png" alt="image-20220919135239146"></p>
+<p>4，创建workload 挂载对应PVC</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">apiVersion:</span> <span class="hljs-string">apps/v1</span><br><span class="hljs-attr">kind:</span> <span class="hljs-string">Deployment</span><br><span class="hljs-attr">metadata:</span><br>  <span class="hljs-attr">labels:</span><br>    <span class="hljs-attr">k8s-app:</span> <span class="hljs-string">centos</span><br>  <span class="hljs-attr">name:</span> <span class="hljs-string">centos</span><br>  <span class="hljs-attr">namespace:</span> <span class="hljs-string">cjweichen</span><br><span class="hljs-attr">spec:</span><br>  <span class="hljs-attr">replicas:</span> <span class="hljs-number">1</span><br>  <span class="hljs-attr">selector:</span><br>    <span class="hljs-attr">matchLabels:</span><br>      <span class="hljs-attr">k8s-app:</span> <span class="hljs-string">centos</span><br>  <span class="hljs-attr">template:</span><br>    <span class="hljs-attr">metadata:</span><br>      <span class="hljs-attr">labels:</span><br>        <span class="hljs-attr">k8s-app:</span> <span class="hljs-string">centos</span><br>    <span class="hljs-attr">spec:</span><br>      <span class="hljs-attr">containers:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">args:</span><br>        <span class="hljs-bullet">-</span> <span class="hljs-string">-c</span><br>        <span class="hljs-bullet">-</span> <span class="hljs-string">sleep</span> <span class="hljs-number">360000</span><br>        <span class="hljs-attr">command:</span><br>        <span class="hljs-bullet">-</span> <span class="hljs-string">/bin/sh</span><br>        <span class="hljs-attr">image:</span> <span class="hljs-string">centos:latest</span><br>        <span class="hljs-attr">imagePullPolicy:</span> <span class="hljs-string">IfNotPresent</span><br>        <span class="hljs-attr">name:</span> <span class="hljs-string">centos</span><br>        <span class="hljs-attr">volumeMounts:</span><br>        <span class="hljs-bullet">-</span> <span class="hljs-attr">mountPath:</span> <span class="hljs-string">/mnt</span><br>          <span class="hljs-attr">name:</span> <span class="hljs-string">nfs</span><br>      <span class="hljs-attr">volumes:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">nfs</span><br>        <span class="hljs-attr">persistentVolumeClaim:</span><br>          <span class="hljs-attr">claimName:</span> <span class="hljs-string">nfs-subdir-pvc</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># pwd</span><br>/nfs/cjweichen-nfs-subdir-pvc-pvc-5fdb9f45-6e98-4a9b-b6e0-920a6c7a6edc<br></code></pre></td></tr></table></figure>
+
+<p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209191359304.png" alt="image-20220919135928232"></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://blog.chen1900s.cn">JingWei Chen</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://blog.chen1900s.cn/post/45e67b0c.html">https://blog.chen1900s.cn/post/45e67b0c.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://blog.chen1900s.cn" target="_blank">JingWei Chen</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Kubernetes/">Kubernetes</a><a class="post-meta__tags" href="/tags/NFS/">NFS</a></div><div class="post_share"><div class="social-share" data-image="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209181138830.jpeg" data-sites="wechat,qq,weibo"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i> 打赏</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.png" target="_blank"><img class="post-qr-code-img" src="/img/wechat.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.png" target="_blank"><img class="post-qr-code-img" src="/img/alipay.png" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/post/4588d79d.html"><img class="next-cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209181138830.jpeg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">TKE集群使用自建NFS挂载</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/post/4588d79d.html" title="TKE集群使用自建NFS挂载"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209181138830.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-09-19</div><div class="title">TKE集群使用自建NFS挂载</div></div></a></div><div><a href="/post/e3ad72ca.html" title="Helm安装和使用"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/helm-20220831.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-06-02</div><div class="title">Helm安装和使用</div></div></a></div><div><a href="/post/b9437839.html" title="Kube-state-metrics部署安装"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172031080.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-06-08</div><div class="title">Kube-state-metrics部署安装</div></div></a></div><div><a href="/post/76f3febd.html" title="Kubernetes中pod数据存储"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209031845569.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-05-26</div><div class="title">Kubernetes中pod数据存储</div></div></a></div><div><a href="/post/e0d4c727.html" title="Kubernetes容器资源限制和lxcfs问题"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209041949439.jpeg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-06-01</div><div class="title">Kubernetes容器资源限制和lxcfs问题</div></div></a></div><div><a href="/post/7af4624e.html" title="Kubernetes部署nacos服务"><img class="cover" src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/微信图片_20220828001026.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2020-05-27</div><div class="title">Kubernetes部署nacos服务</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">JingWei Chen</div><div class="author-info__description">抬头，微笑，你好</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">17</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">12</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><a id="card-info-btn" href="https://blog.chen1900s.cn/"><i class="iconfont icon-CSDN"></i><span>My Blog</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/chen1900s" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="/chen1900s@163.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="tencent://AddContact/?fromId=45&amp;fromSubId=1&amp;subcmd=all&amp;uin=728831102&amp;website=www.oicqzone.com" target="_blank" title="QQ"><i class="fab fa-qq"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">刚开始写博客，欢迎大家来吐槽</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%83%A8%E7%BD%B2%E5%AE%89%E8%A3%85"><span class="toc-number">2.</span> <span class="toc-text">部署安装</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Helm%E6%96%B9%E5%BC%8F%E5%AE%89%E8%A3%85"><span class="toc-number">2.1.</span> <span class="toc-text">Helm方式安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%89%8B%E5%8A%A8YAML%E5%AE%89%E8%A3%85"><span class="toc-number">2.2.</span> <span class="toc-text">手动YAML安装</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8"><span class="toc-number">3.</span> <span class="toc-text">基本使用</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/post/45e67b0c.html" title="TKE集群NFS动态创建子目录挂载"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209181138830.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="TKE集群NFS动态创建子目录挂载"/></a><div class="content"><a class="title" href="/post/45e67b0c.html" title="TKE集群NFS动态创建子目录挂载">TKE集群NFS动态创建子目录挂载</a><time datetime="2022-09-19T05:06:53.000Z" title="发表于 2022-09-19 13:06:53">2022-09-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/4588d79d.html" title="TKE集群使用自建NFS挂载"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209181138830.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="TKE集群使用自建NFS挂载"/></a><div class="content"><a class="title" href="/post/4588d79d.html" title="TKE集群使用自建NFS挂载">TKE集群使用自建NFS挂载</a><time datetime="2022-09-19T02:20:56.000Z" title="发表于 2022-09-19 10:20:56">2022-09-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/26d138ca.html" title="TKE集群中Nginx-ingress常用案例"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209181138830.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="TKE集群中Nginx-ingress常用案例"/></a><div class="content"><a class="title" href="/post/26d138ca.html" title="TKE集群中Nginx-ingress常用案例">TKE集群中Nginx-ingress常用案例</a><time datetime="2020-06-10T05:07:04.000Z" title="发表于 2020-06-10 13:07:04">2020-06-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/1ed7eb83.html" title="missing-container-metrics部署安装和使用"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209180021460.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="missing-container-metrics部署安装和使用"/></a><div class="content"><a class="title" href="/post/1ed7eb83.html" title="missing-container-metrics部署安装和使用">missing-container-metrics部署安装和使用</a><time datetime="2020-06-08T15:58:58.000Z" title="发表于 2020-06-08 23:58:58">2020-06-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/b9437839.html" title="Kube-state-metrics部署安装"><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209172031080.jpeg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Kube-state-metrics部署安装"/></a><div class="content"><a class="title" href="/post/b9437839.html" title="Kube-state-metrics部署安装">Kube-state-metrics部署安装</a><time datetime="2020-06-08T13:58:58.000Z" title="发表于 2020-06-08 21:58:58">2020-06-08</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url('https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202209031854794.jpg')"><div id="footer-wrap"><div class="copyright">&copy;2018 - 2022  <i id="heartbeat" class="fa fas fa-heartbeat"></i> JingWei Chen</div><div class="footer_custom_text">welcome to my <a href="https://blog.chen1900s.cn">blog</a>!</div></div><link rel="stylesheet" href="https://fastly.jsdelivr.net/gh/HCLonely/images@master/others/heartbeat.min.css"></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="translateLink" type="button" title="简繁转换">简</button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="chat_btn" type="button" title="聊天"><i class="fas fa-sms"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'vQGGuuDa77AhD7ncbneaP0hc-gzGzoHsz',
+      appKey: 'Sd5qU4npE8D2fNMMkhkzdF9F',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !false) {
+  if (false) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script></div><script type="text/javascript" src="/js/fairyDustCursor.js"></script><div class="aplayer no-destroy" data-id="7607717868" data-server="netease" data-type="playlist" data-fixed="true" data-mini="true" data-listFolded="false" data-order="random" data-lrctype="1" data-preload="none" data-autoplay="false" muted></div><script defer="defer" id="fluttering_ribbon" mobile="true" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-fluttering-ribbon.min.js"></script><script>(function(d, w, c) {
+    w.ChatraID = 'ndgXjuGW8XFPQMnN2';
+    var s = d.createElement('script');
+    w[c] = w[c] || function() {
+        (w[c].q = w[c].q || []).push(arguments);
+    };
+    s.async = true;
+    s.src = 'https://call.chatra.io/chatra.js';
+    if (d.head) d.head.appendChild(s);
+})(document, window, 'Chatra');
+
+if (true) {
+  var chatBtnFn = () => {
+    var chatBtn = document.getElementById("chat_btn")
+    chatBtn.addEventListener("click", function(){
+      Chatra('openChat')
+    });
+  }
+  chatBtnFn()
+} else {
+  if (true) {
+    function chatBtnHide () {
+      Chatra('hide')
+    }
+    function chatBtnShow () {
+      Chatra('show')
+    }
+  }
+}</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/metingjs/dist/Meting.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>let pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+
+  // removeEventListener scroll 
+  window.tocScrollFn && window.removeEventListener('scroll', window.tocScrollFn)
+  window.scrollCollect && window.removeEventListener('scroll', scrollCollect)
+
+  typeof preloader === 'object' && preloader.initLoading()
+  document.getElementById('rightside').style.cssText = "opacity: ''; transform: ''"
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+
+  typeof disqusjs === 'object' && disqusjs.destroy()
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof chatBtnFn === 'function' && chatBtnFn()
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+
+  typeof preloader === 'object' && preloader.endLoading()
+})
+
+document.addEventListener('pjax:error', (e) => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
