@@ -290,11 +290,11 @@
       
         <tags>
             
-            <tag> Helm </tag>
-            
             <tag> Kubernetes </tag>
             
             <tag> Harbor </tag>
+            
+            <tag> Helm </tag>
             
         </tags>
       
