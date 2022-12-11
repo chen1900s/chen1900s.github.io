@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>Kubernetes中的cgroup Killed问题</title>
+      <link href="/post/dcec15df.html"/>
+      <url>/post/dcec15df.html</url>
+      
+        <content type="html"><![CDATA[<blockquote><p>环境：</p><p>1，腾讯云TKE集群</p><p>2，CVM节点 内核：tlinux 4.14.105-19-0024</p></blockquote><p><strong>Cgroup OOM原因</strong></p><p>一般是由于容器的内存实际使用量超过了容器内存限制值limit而导致的事件。比如容器的内存限制值配置了1Gi，而容器的内存随着容器内进程内存使用量的增加超过了1Gi，就会导致容器被操作系统Cgroup Kill。发生容器被Kill之后，容器已经被停止，所以后续会出现应用实例被重启的情况</p><p><strong>解决方案</strong></p><p>检查容器内进程是否有内存泄漏问题，同时适当调整容器内存的限制值limit大小。可以结合应用监控来看变化趋势。需要注意的是，容器内存限制值大小不应该过大，否则可能导致极端资源争抢情况下，容器被迫驱逐的问题。 </p><p><strong>oom score</strong></p><p>在遇到较高内存使用压力时，Linux 内核会杀掉一些不太重要的进程，腾出空间保障系统正常运行。它会给每个进程（<code>/proc/$pid/oom_score</code>）分配一个得分（<code>oom_score</code>），分数越高，被 OOM 的概率就越大。 <strong>这个参数本身只反映该进程的可用资源在系统中所占的百分比，并没有“该进程有多重要”的概念</strong> </p><p>在kubernetes中各个POD之间资源是通过cgroup进行资源隔离，查看POD cgroup相关信息，登录POD所在节点，执行</p><figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">cd</span>  /sys/fs/cgroup/memory/kubepods/burstable/pod[pod的uuid]    <span class="hljs-comment">#uuid可以通过下面命令查询</span><br><br>示例：<br><span class="hljs-built_in">cd</span> /sys/fs/cgroup/memory/kubepods/burstable/pod7b5d76c8-a37b-4f1c-8db9-383017063244<br></code></pre></td></tr></table></figure><p>查下集群POD的uuid（根据具体情况可以根据命名空间查询）</p><figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash">kubectl get pods -o custom-columns=Namespace:..metadata.namespace,podName:.metadata.name,podIP:.status.podIP,podStatus:.status.phase,nodeIP:.status.hostIP,Pod_ID:.metadata.uid,ContainerName:.spec.containers[*].name<br></code></pre></td></tr></table></figure><p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202212111709485.png" alt="1668051091904"></p><p>当POD发生OOM时候，可以查看dmesg日志：</p><figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash">dmesg  | grep -A  20  7b5d76c8-a37b-4f1c-8db9-38301706324<br></code></pre></td></tr></table></figure><p><img src="https://chen1900s-1257020962.cos.ap-chongqing.myqcloud.com/my-blog/image/202212111710803.png" alt="1668051203724"></p><p><strong>如何通过oom kill日志反查对应的容器</strong></p><p>通过dmesg日志查到 有如下oom 信息：</p><figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash">dmesg  | grep -A  20 -i  killed<br></code></pre></td></tr></table></figure><p>日志如下</p><figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash">[198542.576728] Task <span class="hljs-keyword">in</span> /kubepods/burstable/pod0f5eb28f-6722-4cf5-ab0f-b62748c018d4/0dc1822caf9e150de25daa1cf572418426ce6b72757b5efdff52acef348368a3 killed as a result of <span class="hljs-built_in">limit</span> of /kubepods/burstable/pod0f5eb28f-6722-4cf5-ab0f-b62748c018d4<br>[198542.576733] memory: usage 122880kB, <span class="hljs-built_in">limit</span> 122880kB, failcnt 83<br>[198542.576734] memory+swap: usage 122880kB, <span class="hljs-built_in">limit</span> 9007199254740988kB, failcnt 0<br>[198542.576734] kmem: usage 0kB, <span class="hljs-built_in">limit</span> 9007199254740988kB, failcnt 0<br>[198542.576735] Memory cgroup stats <span class="hljs-keyword">for</span> /kubepods/burstable/pod0f5eb28f-6722-4cf5-ab0f-b62748c018d4: cache:0KB rss:0KB rss_huge:0KB shmem:0KB mapped_file:0KB dirty:0KB writeback:0KB swap:0KB inactive_anon:0KB active_anon:0KB inactive_file:0KB active_file:0KB unevictable:0KB<br></code></pre></td></tr></table></figure><p>可以查到POD的uuid：0f5eb28f-6722-4cf5-ab0f-b62748c018d4</p><p>通过kubelet 日志或者message日志过滤该uid</p><figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash">journalctl -u kubelet | grep <span class="hljs-string">&quot;0f5eb28f-6722-4cf5-ab0f-b62748c018d4&quot;</span> <span class="hljs-comment">#POD uuid</span><br></code></pre></td></tr></table></figure><p>日志如下，可以看到具体POD信息 包括POD名称和所在namespace</p><figure class="highlight bash"><table><tr><td class="code"><pre><code class="hljs bash">Dec 11 17:29:21 VM-249-96-tlinux kubelet[10264]: E1211 17:29:21.519957   10264 pod_workers.go:191] Error syncing pod 0f5eb28f-6722-4cf5-ab0f-b62748c018d4 (<span class="hljs-string">&quot;memory-request-limit-54ff657644-wm7pj_default(0f5eb28f-6722-4cf5-ab0f-b62748c018d4)&quot;</span>), skipping: failed to <span class="hljs-string">&quot;StartContainer&quot;</span> <span class="hljs-keyword">for</span> <span class="hljs-string">&quot;memory-demo-ctr&quot;</span> with CrashLoopBackOff: <span class="hljs-string">&quot;back-off 5m0s restarting failed container=memory-demo-ctr pod=memory-request-limit-54ff657644-wm7pj_default(0f5eb28f-6722-4cf5-ab0f-b62748c018d4)&quot;</span><br></code></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> Kubernetes </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Kubernetes </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>通过环境变量将POD信息呈现给容器</title>
       <link href="/post/6c58efa9.html"/>
       <url>/post/6c58efa9.html</url>
